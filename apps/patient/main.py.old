@@ -1,0 +1,807 @@
+import flet as ft
+import requests
+import json
+import httpx
+from datetime import datetime
+
+API_BASE = "http://127.0.0.1:2000/api"
+
+# For profile view
+from .profile_view import show_profile_view as render_profile
+
+def main(page: ft.Page):
+    page.title = "Patient App"
+    token = {"value": None}
+    user_id = {"value": None}
+    current_view = {"value": "home"}
+    user_location = {"lat": None, "lon": None}
+
+    # Login components
+    email = ft.TextField(label="Email")
+    password = ft.TextField(label="Password", password=True, can_reveal_password=True)
+    output = ft.Text()
+    
+    # Sign-up components
+    signup_email = ft.TextField(label="Email")
+    signup_password = ft.TextField(label="Password", password=True, can_reveal_password=True)
+    signup_confirm_password = ft.TextField(label="Confirm Password", password=True, can_reveal_password=True)
+    signup_full_name = ft.TextField(label="Full Name")
+    signup_output = ft.Text()
+    
+    # Navigation components
+    nav_bar = ft.NavigationBar(
+        destinations=[
+            ft.NavigationDestination(icon=ft.icons.HOME, label="Home"),
+            ft.NavigationDestination(icon=ft.icons.CALENDAR_TODAY, label="Appointments"),
+            ft.NavigationDestination(icon=ft.icons.CHECK_CIRCLE, label="Completed"),
+            ft.NavigationDestination(icon=ft.icons.PERSON, label="Profile"),
+        ],
+        on_change=lambda e: change_view(e.control.selected_index),
+        height=60
+    )
+    
+    # Content areas
+    content_area = ft.Container()
+    hospitals_list = ft.ListView(expand=1, spacing=10, padding=10)
+    appt_list = ft.ListView(expand=1, spacing=10, padding=10)
+    completed_appt_list = ft.ListView(expand=1, spacing=10, padding=10)
+    
+    # Content areas
+    content_area = ft.Container()
+    hospitals_list = ft.ListView(expand=1, spacing=10, padding=10)
+    appt_list = ft.ListView(expand=1, spacing=10, padding=10)
+    completed_appt_list = ft.ListView(expand=1, spacing=10, padding=10)
+
+    def do_login(e):
+        try:
+            r = requests.post(f"{API_BASE}/login", json={"email": email.value, "password": password.value})
+            if r.status_code == 200:
+                data = r.json()
+                token["value"] = data["access_token"]
+                user_id["value"] = data["user"]["user_id"]
+                output.value = "Logged in"
+                page.update()
+                show_main_app()
+            else:
+                output.value = r.json().get("message", "Login failed")
+                page.update()
+        except Exception as ex:
+            output.value = str(ex)
+            page.update()
+
+    def show_main_app():
+        page.clean()
+        page.add(
+            ft.Column([
+                ft.Container(
+                    content=content_area,
+                    expand=True,
+                    padding=10
+                ),
+                nav_bar
+            ], expand=True)
+        )
+        show_home_view()
+
+    async def change_view(index):
+        if token["value"] is None and index != 0:
+            content_area.content = ft.Column(
+                [
+                    ft.Text("Please login first", size=20),
+                    ft.ElevatedButton(text="Go to Login", on_click=lambda _: show_login_view())
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER
+            )
+            page.update()
+            return
+            
+        if index == 0:
+            show_home_view()
+        elif index == 1:
+            show_appointments_view()
+        elif index == 2:
+            show_completed_view()
+        elif index == 3:
+            profile_content = await render_profile(page, token["value"])
+            content_area.content = profile_content
+            page.update()
+
+    async def show_profile_view():
+        current_view["value"] = "profile"
+        from .profile_view import show_profile_view as render_profile
+        profile_content = await render_profile(page, token["value"])
+        content_area.content = profile_content
+        page.update()
+
+    def show_home_view():
+        current_view["value"] = "home"
+        content_area.content = ft.Column([
+            ft.Text("Welcome, Patient!", size=24, weight=ft.FontWeight.BOLD),
+            ft.Text("Today's Overview", size=18),
+            ft.Divider(),
+            ft.Text("Quick Access:"),
+            ft.Text("• Today's Appointments: Loading..."),
+            ft.Text("• Completed Appointments: Loading..."),
+            ft.Text("• Nearby Hospitals: Loading..."),
+            ft.Divider(),
+            ft.Row([
+                ft.Text("Nearby Hospitals:", size=16, weight=ft.FontWeight.BOLD),
+                ft.IconButton(
+                    icon=ft.icons.REFRESH,
+                    tooltip="Refresh hospital search",
+                    on_click=lambda e: load_nearby()
+                )
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+            hospitals_list,
+        ], expand=True, scroll=ft.ScrollMode.AUTO)
+        load_nearby()
+        page.update()
+
+    def show_appointments_view():
+        current_view["value"] = "appointments"
+        load_appointments()
+        content_area.content = ft.Column([
+            ft.Text("Today's Appointments", size=20, weight=ft.FontWeight.BOLD),
+            ft.Divider(),
+            appt_list,
+        ], expand=True, scroll=ft.ScrollMode.AUTO)
+        page.update()
+
+    def show_completed_view():
+        current_view["value"] = "completed"
+        load_completed_appointments()
+        content_area.content = ft.Column([
+            ft.Text("Completed Appointments", size=20, weight=ft.FontWeight.BOLD),
+            ft.Divider(),
+            completed_appt_list,
+        ], expand=True, scroll=ft.ScrollMode.AUTO)
+        page.update()
+
+    def show_profile_view():
+        current_view["value"] = "profile"
+        if not token["value"]:
+            content_area.content = ft.Column([
+                ft.Text("Profile", size=20, weight=ft.FontWeight.BOLD),
+                ft.Divider(),
+                ft.Text("Please login to view your profile", color=ft.colors.RED),
+                ft.ElevatedButton(
+                    "Go to Login",
+                    on_click=lambda _: show_login_view()
+                ),
+            ], expand=True, scroll=ft.ScrollMode.AUTO)
+            page.update()
+            return
+        
+        content_area.content = ft.Column([
+            ft.Text("Profile", size=20, weight=ft.FontWeight.BOLD),
+            ft.Divider(),
+            ft.Text("Loading profile information...", color=ft.colors.BLUE),
+            ft.ProgressRing(),
+        ], expand=True, scroll=ft.ScrollMode.AUTO)
+        page.update()
+        load_profile_data()
+
+    def load_profile_data():
+        try:
+            if not token["value"]:
+                content_area.content = ft.Column([
+                    ft.Text("Profile", size=20, weight=ft.FontWeight.BOLD),
+                    ft.Divider(),
+                    ft.Text("Please login to view your profile", color=ft.colors.RED),
+                ], expand=True, scroll=ft.ScrollMode.AUTO)
+                page.update()
+                return
+
+            headers = {"Authorization": f"Bearer {token['value']}"}
+            r = requests.get(f"{API_BASE}/profile", headers=headers)
+            
+            if r.status_code == 200:
+                profile = r.json()
+                content_area.content = ft.Column([
+                    ft.Text("Profile", size=20, weight=ft.FontWeight.BOLD),
+                    ft.Row([
+                        ft.ElevatedButton(
+                            "🔄 Refresh",
+                            on_click=lambda _: load_profile_data(),
+                            icon=ft.icons.REFRESH
+                        ),
+                        ft.ElevatedButton(
+                            "Logout",
+                            on_click=logout,
+                            icon=ft.icons.LOGOUT
+                        ),
+                    ]),
+                    ft.Divider(),
+                    ft.Text("Patient Information:", size=16, weight=ft.FontWeight.BOLD),
+                    ft.Card(
+                        content=ft.Container(
+                            content=ft.Column([
+                                ft.Row([
+                                    ft.Icon(ft.icons.PERSON, color=ft.colors.BLUE),
+                                    ft.Text("Personal Details", size=16, weight=ft.FontWeight.BOLD),
+                                ]),
+                                ft.Divider(),
+                                ft.Text(f"👤 Name: {profile.get('full_name', 'Not provided')}", size=14),
+                                ft.Text(f"📧 Email: {profile.get('email', 'Not provided')}", size=14),
+                                ft.Text(f"🆔 User ID: {profile.get('user_id', 'Not provided')}", size=14),
+                                ft.Text(f"👥 Type: {profile.get('user_type', 'Not provided')}", size=14),
+                                ft.Text(f"📅 Member Since: User #{profile.get('created_at', 'Unknown')}", size=14),
+                            ], spacing=5),
+                            padding=15
+                        ),
+                        margin=ft.margin.symmetric(vertical=5)
+                    ),
+                    ft.Card(
+                        content=ft.Container(
+                            content=ft.Column([
+                                ft.Row([
+                                    ft.Icon(ft.icons.SECURITY, color=ft.colors.GREEN),
+                                    ft.Text("Account Security", size=16, weight=ft.FontWeight.BOLD),
+                                ]),
+                                ft.Divider(),
+                                ft.Text("🔐 Password: ••••••••", size=14),
+                                ft.Text("✅ Account Status: Active", size=14, color=ft.colors.GREEN),
+                                ft.Text("🔑 Authentication: JWT Token", size=14),
+                            ], spacing=5),
+                            padding=15
+                        ),
+                        margin=ft.margin.symmetric(vertical=5)
+                    ),
+                    ft.Card(
+                        content=ft.Container(
+                            content=ft.Column([
+                                ft.Row([
+                                    ft.Icon(ft.icons.INFO, color=ft.colors.ORANGE),
+                                    ft.Text("App Information", size=16, weight=ft.FontWeight.BOLD),
+                                ]),
+                                ft.Divider(),
+                                ft.Text("📱 App Version: 1.0.0", size=14),
+                                ft.Text("🏥 Healthcare Provider: Asupatri", size=14),
+                                ft.Text("🌐 Service: Patient Portal", size=14),
+                            ], spacing=5),
+                            padding=15
+                        ),
+                        margin=ft.margin.symmetric(vertical=5)
+                    ),
+                ], expand=True, scroll=ft.ScrollMode.AUTO)
+                page.update()
+                    ft.Divider(),
+                    ft.Text("Patient Information:", size=16, weight=ft.FontWeight.BOLD),
+                    ft.Card(
+                        content=ft.Container(
+                            content=ft.Column([
+                                ft.Row([
+                                    ft.Icon(ft.icons.PERSON, color=ft.colors.BLUE),
+                                    ft.Text("Personal Details", size=16, weight=ft.FontWeight.BOLD),
+                                ]),
+                                ft.Divider(),
+                                ft.Text(f"👤 Name: {profile.get('full_name', 'Not provided')}", size=14),
+                                ft.Text(f"📧 Email: {profile.get('email', 'Not provided')}", size=14),
+                                ft.Text(f"🆔 User ID: {profile.get('user_id', 'Not provided')}", size=14),
+                                ft.Text(f"👥 Type: {profile.get('user_type', 'Not provided')}", size=14),
+                                ft.Text(f"📅 Member Since: User #{profile.get('created_at', 'Unknown')}", size=14),
+                            ], spacing=5),
+                            padding=15
+                        ),
+                        margin=ft.margin.symmetric(vertical=5)
+                    ),
+                    ft.Card(
+                        content=ft.Container(
+                            content=ft.Column([
+                                ft.Row([
+                                    ft.Icon(ft.icons.SECURITY, color=ft.colors.GREEN),
+                                    ft.Text("Account Security", size=16, weight=ft.FontWeight.BOLD),
+                                ]),
+                                ft.Divider(),
+                                ft.Text("🔐 Password: ••••••••", size=14),
+                                ft.Text("✅ Account Status: Active", size=14, color=ft.colors.GREEN),
+                                ft.Text("🔑 Authentication: JWT Token", size=14),
+                            ], spacing=5),
+                            padding=15
+                        ),
+                        margin=ft.margin.symmetric(vertical=5)
+                    ),
+                    ft.Card(
+                        content=ft.Container(
+                            content=ft.Column([
+                                ft.Row([
+                                    ft.Icon(ft.icons.INFO, color=ft.colors.ORANGE),
+                                    ft.Text("App Information", size=16, weight=ft.FontWeight.BOLD),
+                                ]),
+                                ft.Divider(),
+                                ft.Text("📱 App Version: 1.0.0", size=14),
+                                ft.Text("🏥 Healthcare Provider: Asupatri", size=14),
+                                ft.Text("🌐 Service: Patient Portal", size=14),
+                            ], spacing=5),
+                            padding=15
+                        ),
+                        margin=ft.margin.symmetric(vertical=5)
+                    ),
+                ], expand=True, scroll=ft.ScrollMode.AUTO)
+                page.update()
+            else:
+                content_area.content = ft.Column([
+                    ft.Text("Profile", size=20, weight=ft.FontWeight.BOLD),
+                    ft.Divider(),
+                    ft.Text(f"Error loading profile: {r.json().get('message', 'Unknown error')}", color=ft.colors.RED),
+                ], expand=True, scroll=ft.ScrollMode.AUTO)
+                page.update()
+        except Exception as ex:
+            content_area.content = ft.Column([
+                ft.Text("Profile", size=20, weight=ft.FontWeight.BOLD),
+                ft.Divider(),
+                ft.Text(f"Error: {str(ex)}", color=ft.colors.RED),
+            ], expand=True, scroll=ft.ScrollMode.AUTO)
+            page.update()
+                        margin=ft.margin.symmetric(vertical=5)
+                    ),
+                    ft.Divider(),
+                    ft.Row([
+                        ft.ElevatedButton(
+                            "🔄 Refresh Profile", 
+                            on_click=lambda e: load_profile_data(),
+                            style=ft.ButtonStyle(color=ft.colors.BLUE)
+                        ),
+                        ft.ElevatedButton(
+                            "🚪 Logout", 
+                            on_click=logout,
+                            style=ft.ButtonStyle(color=ft.colors.RED)
+                        ),
+                    ], alignment=ft.MainAxisAlignment.SPACE_EVENLY),
+                ], expand=True, scroll=ft.ScrollMode.AUTO)
+                
+                content_area.content = profile_content
+                
+            else:
+                content_area.content = ft.Column([
+                    ft.Text("Profile", size=20, weight=ft.FontWeight.BOLD),
+                    ft.Divider(),
+                    ft.Text("❌ Failed to load profile", color=ft.colors.RED, size=16),
+                    ft.Text(f"Error: {r.status_code}", color=ft.colors.RED),
+                    ft.ElevatedButton("🔄 Retry", on_click=lambda e: load_profile_data()),
+                    ft.ElevatedButton("🚪 Logout", on_click=logout),
+                ], expand=True, scroll=ft.ScrollMode.AUTO)
+                
+        except Exception as ex:
+            content_area.content = ft.Column([
+                ft.Text("Profile", size=20, weight=ft.FontWeight.BOLD),
+                ft.Divider(),
+                ft.Text("❌ Error loading profile", color=ft.colors.RED, size=16),
+                ft.Text(f"Error: {str(ex)}", color=ft.colors.RED),
+                ft.ElevatedButton("🔄 Retry", on_click=lambda e: load_profile_data()),
+                ft.ElevatedButton("🚪 Logout", on_click=logout),
+            ], expand=True, scroll=ft.ScrollMode.AUTO)
+        
+        page.update()
+
+    def logout(e):
+        token["value"] = None
+        user_id["value"] = None
+        page.clean()
+        show_login_view()
+
+    def get_user_location():
+        """Get user's current location using IP-based geolocation"""
+        try:
+            # Try multiple IP geolocation services for better reliability
+            services = [
+                "http://ip-api.com/json/",
+                "https://ipapi.co/json/",
+                "http://ipinfo.io/json"
+            ]
+            
+            for service in services:
+                try:
+                    print(f"Trying location service: {service}")
+                    response = requests.get(service, timeout=10)
+                    if response.status_code == 200:
+                        data = response.json()
+                        print(f"Location service response: {data}")
+                        
+                        # Handle different response formats
+                        if service == "http://ip-api.com/json/":
+                            if data.get('status') == 'success':
+                                user_location["lat"] = data.get('lat')
+                                user_location["lon"] = data.get('lon')
+                                print(f"Got location from ip-api: {user_location}")
+                                return True
+                        elif service == "https://ipapi.co/json/":
+                            if 'latitude' in data and 'longitude' in data:
+                                user_location["lat"] = data.get('latitude')
+                                user_location["lon"] = data.get('longitude')
+                                print(f"Got location from ipapi.co: {user_location}")
+                                return True
+                        elif service == "http://ipinfo.io/json":
+                            if 'loc' in data:
+                                lat, lon = data['loc'].split(',')
+                                user_location["lat"] = float(lat)
+                                user_location["lon"] = float(lon)
+                                print(f"Got location from ipinfo: {user_location}")
+                                return True
+                except Exception as e:
+                    print(f"Error with {service}: {e}")
+                    continue
+            
+            # Fallback to demo coordinates
+            print("All location services failed, using demo coordinates")
+            user_location["lat"] = 18.5204
+            user_location["lon"] = 73.8567
+            return True
+            
+        except Exception as ex:
+            print(f"Location error: {ex}")
+            # Fallback to demo coordinates
+            user_location["lat"] = 18.5204
+            user_location["lon"] = 73.8567
+            return False
+
+    def scrape_nearby_hospitals(lat, lon):
+        """Scrape nearby hospitals from web sources"""
+        hospitals = []
+        
+        print(f"Scraping hospitals for location: {lat}, {lon}")
+        
+        try:
+            # Use Overpass API (OpenStreetMap) - free and no API keys required
+            overpass_url = "http://overpass-api.de/api/interpreter"
+            overpass_query = f"""
+            [out:json][timeout:25];
+            (
+              node["amenity"="hospital"](around:10000,{lat},{lon});
+              way["amenity"="hospital"](around:10000,{lat},{lon});
+              relation["amenity"="hospital"](around:10000,{lat},{lon});
+            );
+            out center;
+            """
+            
+            print(f"Making request to Overpass API...")
+            response = requests.get(overpass_url, params={'data': overpass_query}, timeout=15)
+            print(f"Overpass API response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                elements = data.get('elements', [])
+                print(f"Found {len(elements)} hospital elements from Overpass API")
+                
+                for element in elements:
+                    tags = element.get('tags', {})
+                    name = tags.get('name', 'Unknown Hospital')
+                    
+                    # Skip if no name
+                    if name == 'Unknown Hospital':
+                        continue
+                    
+                    # Get address from various possible fields
+                    addr = (tags.get('addr:full') or 
+                           tags.get('addr:street') or 
+                           tags.get('addr:housename') or 
+                           'Address not available')
+                    
+                    phone = tags.get('phone', 'Phone not available')
+                    
+                    # Get coordinates
+                    hosp_lat = None
+                    hosp_lon = None
+                    
+                    if 'lat' in element and 'lon' in element:
+                        hosp_lat = element['lat']
+                        hosp_lon = element['lon']
+                    elif 'center' in element:
+                        hosp_lat = element['center']['lat']
+                        hosp_lon = element['center']['lon']
+                    
+                    if hosp_lat is None or hosp_lon is None:
+                        continue
+                    
+                    # Calculate distance
+                    distance = calculate_distance(lat, lon, hosp_lat, hosp_lon)
+                    
+                    hospitals.append({
+                        'name': name,
+                        'address': addr,
+                        'phone': phone,
+                        'distance_km': round(distance, 2),
+                        'latitude': hosp_lat,
+                        'longitude': hosp_lon,
+                        'fee_details': 'Contact hospital for pricing'
+                    })
+                
+                print(f"Processed {len(hospitals)} hospitals from Overpass API")
+                
+                # Sort by distance
+                hospitals.sort(key=lambda x: x['distance_km'])
+                return hospitals[:10]  # Return top 10 nearest
+            
+        except Exception as ex:
+            print(f"Overpass API scraping error: {ex}")
+        
+        # Fallback to our database hospitals
+        print("Falling back to database hospitals...")
+        try:
+            r = requests.get(f"{API_BASE}/hospitals/nearby", params={"lat": lat, "lon": lon}, timeout=5)
+            print(f"Database API response status: {r.status_code}")
+            if r.status_code == 200:
+                db_hospitals = r.json().get("hospitals", [])
+                print(f"Found {len(db_hospitals)} hospitals from database")
+                return db_hospitals
+        except Exception as ex:
+            print(f"Database API error: {ex}")
+        
+        # Final fallback - create some sample hospitals
+        print("Using sample hospitals as final fallback...")
+        sample_hospitals = [
+            {
+                'name': 'City General Hospital',
+                'address': '123 Main Street, Downtown',
+                'phone': '+1-555-0101',
+                'distance_km': 0.5,
+                'fee_details': 'Consultation: $50, Emergency: $100'
+            },
+            {
+                'name': 'Metro Medical Center',
+                'address': '456 Health Avenue, Midtown',
+                'phone': '+1-555-0102',
+                'distance_km': 1.2,
+                'fee_details': 'Consultation: $60, Emergency: $120'
+            },
+            {
+                'name': 'Sunrise Hospital',
+                'address': '789 Wellness Blvd, Uptown',
+                'phone': '+1-555-0103',
+                'distance_km': 2.1,
+                'fee_details': 'Consultation: $45, Emergency: $90'
+            }
+        ]
+        return sample_hospitals
+
+    def calculate_distance(lat1, lon1, lat2, lon2):
+        """Calculate distance between two points using Haversine formula"""
+        from math import radians, cos, sin, asin, sqrt
+        
+        if None in (lat1, lon1, lat2, lon2):
+            return float("inf")
+        
+        # Convert decimal degrees to radians
+        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+        
+        # Haversine formula
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * asin(sqrt(a))
+        km = 6371 * c
+        return km
+
+    def load_nearby():
+        hospitals_list.controls.clear()
+        hospitals_list.controls.append(ft.Text("🌍 Getting your location...", color=ft.colors.BLUE))
+        page.update()
+        
+        try:
+            print("Starting location detection...")
+            # Get user's real location
+            location_success = get_user_location()
+            print(f"Location detection result: {location_success}")
+            print(f"User location: {user_location}")
+            
+            if location_success and user_location["lat"] is not None:
+                lat, lon = user_location["lat"], user_location["lon"]
+                hospitals_list.controls.clear()
+                hospitals_list.controls.append(ft.Text(f"📍 Your Location: {lat:.4f}, {lon:.4f}", color=ft.colors.GREEN, size=14))
+                hospitals_list.controls.append(ft.Text("🔍 Searching for nearby hospitals...", color=ft.colors.BLUE))
+                page.update()
+                
+                print(f"Starting hospital search for coordinates: {lat}, {lon}")
+                # Scrape hospitals from web sources
+                hospitals = scrape_nearby_hospitals(lat, lon)
+                print(f"Hospital search completed. Found {len(hospitals)} hospitals")
+                
+                hospitals_list.controls.clear()
+                
+                if hospitals:
+                    hospitals_list.controls.append(ft.Text(f"🏥 Found {len(hospitals)} nearby hospitals:", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN))
+                    hospitals_list.controls.append(ft.Text(f"📍 Based on your location: {lat:.4f}, {lon:.4f}", size=12, color=ft.colors.BLUE))
+                    
+                    for i, h in enumerate(hospitals, 1):
+                        distance = h.get('distance_km', '?')
+                        phone = h.get('phone', 'N/A')
+                        hospitals_list.controls.append(
+                            ft.Card(
+                                content=ft.Container(
+                                    content=ft.Column([
+                                        ft.Row([
+                                            ft.Text(f"#{i}", size=12, color=ft.colors.BLUE, weight=ft.FontWeight.BOLD),
+                                            ft.Text(h['name'], size=16, weight=ft.FontWeight.BOLD, expand=True),
+                                        ]),
+                                        ft.Text(f"📍 {h['address']}", size=12),
+                                        ft.Text(f"📞 {phone}", size=12),
+                                        ft.Text(f"💰 {h.get('fee_details', 'Contact for pricing')}", size=12),
+                                        ft.Text(f"📏 {distance} km away", size=12, color=ft.colors.BLUE, weight=ft.FontWeight.BOLD),
+                                    ], spacing=2),
+                                    padding=10
+                                ),
+                                margin=ft.margin.symmetric(vertical=2)
+                            )
+                        )
+                else:
+                    hospitals_list.controls.append(ft.Text("❌ No hospitals found nearby", color=ft.colors.ORANGE, size=16))
+                    hospitals_list.controls.append(ft.Text("💡 This might be due to:", size=12))
+                    hospitals_list.controls.append(ft.Text("• Limited hospital data in your area", size=12))
+                    hospitals_list.controls.append(ft.Text("• Internet connection issues", size=12))
+                    hospitals_list.controls.append(ft.Text("• Location services not available", size=12))
+            else:
+                hospitals_list.controls.clear()
+                hospitals_list.controls.append(ft.Text("❌ Could not get your location", color=ft.colors.RED, size=16))
+                hospitals_list.controls.append(ft.Text("📍 Using sample hospitals instead...", color=ft.colors.ORANGE))
+                
+                # Use sample hospitals as fallback
+                sample_hospitals = [
+                    {
+                        'name': 'City General Hospital',
+                        'address': '123 Main Street, Downtown',
+                        'phone': '+1-555-0101',
+                        'distance_km': 0.5,
+                        'fee_details': 'Consultation: $50, Emergency: $100'
+                    },
+                    {
+                        'name': 'Metro Medical Center',
+                        'address': '456 Health Avenue, Midtown',
+                        'phone': '+1-555-0102',
+                        'distance_km': 1.2,
+                        'fee_details': 'Consultation: $60, Emergency: $120'
+                    },
+                    {
+                        'name': 'Sunrise Hospital',
+                        'address': '789 Wellness Blvd, Uptown',
+                        'phone': '+1-555-0103',
+                        'distance_km': 2.1,
+                        'fee_details': 'Consultation: $45, Emergency: $90'
+                    }
+                ]
+                
+                hospitals_list.controls.append(ft.Text(f"🏥 Sample hospitals (for demonstration):", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.ORANGE))
+                
+                for i, h in enumerate(sample_hospitals, 1):
+                    hospitals_list.controls.append(
+                        ft.Card(
+                            content=ft.Container(
+                                content=ft.Column([
+                                    ft.Row([
+                                        ft.Text(f"#{i}", size=12, color=ft.colors.ORANGE, weight=ft.FontWeight.BOLD),
+                                        ft.Text(h['name'], size=16, weight=ft.FontWeight.BOLD, expand=True),
+                                    ]),
+                                    ft.Text(f"📍 {h['address']}", size=12),
+                                    ft.Text(f"📞 {h['phone']}", size=12),
+                                    ft.Text(f"💰 {h['fee_details']}", size=12),
+                                    ft.Text(f"📏 {h['distance_km']} km away", size=12, color=ft.colors.ORANGE, weight=ft.FontWeight.BOLD),
+                                ], spacing=2),
+                                padding=10
+                            ),
+                            margin=ft.margin.symmetric(vertical=2)
+                        )
+                    )
+                
+        except Exception as ex:
+            print(f"Error in load_nearby: {ex}")
+            hospitals_list.controls.clear()
+            hospitals_list.controls.append(ft.Text(f"❌ Error: {str(ex)}", color=ft.colors.RED, size=16))
+            hospitals_list.controls.append(ft.Text("💡 Please check your internet connection", size=12))
+            hospitals_list.controls.append(ft.Text("🔄 Try clicking the refresh button to retry", size=12))
+        
+        page.update()
+
+    def load_appointments():
+        appt_list.controls.clear()
+        headers = {"Authorization": f"Bearer {token['value']}"}
+        # Add today=true parameter to get only today's appointments
+        r = requests.get(f"{API_BASE}/appointments/{user_id['value']}?today=true", headers=headers)
+        if r.status_code == 200:
+            appointments = r.json().get("appointments", [])
+            if appointments:
+                for a in appointments:
+                    if a['status'] != 'Completed':
+                        appt_list.controls.append(ft.Text(f"{a['date']} {a['time']} - status: {a['status']}"))
+            else:
+                appt_list.controls.append(ft.Text("No appointments scheduled for today"))
+        else:
+            appt_list.controls.append(ft.Text("Failed to load appointments"))
+        page.update()
+
+    def load_completed_appointments():
+        completed_appt_list.controls.clear()
+        headers = {"Authorization": f"Bearer {token['value']}"}
+        # Get all appointments and filter for completed ones
+        r = requests.get(f"{API_BASE}/appointments/{user_id['value']}", headers=headers)
+        if r.status_code == 200:
+            appointments = r.json().get("appointments", [])
+            completed_appts = [a for a in appointments if a['status'] == 'Completed']
+            if completed_appts:
+                for a in completed_appts:
+                    completed_appt_list.controls.append(ft.Text(f"{a['date']} {a['time']} - {a['status']}"))
+            else:
+                completed_appt_list.controls.append(ft.Text("No completed appointments found"))
+        else:
+            completed_appt_list.controls.append(ft.Text("Failed to load completed appointments"))
+        page.update()
+
+    def do_signup(e):
+        try:
+            # Validate passwords match
+            if signup_password.value != signup_confirm_password.value:
+                signup_output.value = "Passwords do not match"
+                signup_output.color = ft.colors.RED
+                page.update()
+                return
+            
+            # Validate required fields
+            if not all([signup_email.value, signup_password.value, signup_full_name.value]):
+                signup_output.value = "Please fill in all fields"
+                signup_output.color = ft.colors.RED
+                page.update()
+                return
+            
+            r = requests.post(f"{API_BASE}/register", json={
+                "email": signup_email.value,
+                "password": signup_password.value,
+                "user_type": "Patient",
+                "full_name": signup_full_name.value
+            })
+            
+            if r.status_code == 201:
+                data = r.json()
+                token["value"] = data["access_token"]
+                user_id["value"] = data["user"]["user_id"]
+                signup_output.value = "Account created successfully!"
+                signup_output.color = ft.colors.GREEN
+                page.update()
+                show_main_app()
+            else:
+                signup_output.value = r.json().get("message", "Registration failed")
+                signup_output.color = ft.colors.RED
+                page.update()
+        except Exception as ex:
+            signup_output.value = str(ex)
+            signup_output.color = ft.colors.RED
+            page.update()
+
+    def show_login_view():
+        page.clean()
+        page.add(
+            ft.Column([
+                ft.Text("Patient App", size=24, weight=ft.FontWeight.BOLD),
+                ft.Tabs(
+                    selected_index=0,
+                    animation_duration=300,
+                    tabs=[
+                        ft.Tab(
+                            text="Login",
+                            content=ft.Column([
+                                ft.Text("Login", size=18, weight=ft.FontWeight.BOLD),
+                                email,
+                                password,
+                                ft.ElevatedButton("Login", on_click=do_login),
+                                output,
+                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+                        ),
+                        ft.Tab(
+                            text="Sign Up",
+                            content=ft.Column([
+                                ft.Text("Create Account", size=18, weight=ft.FontWeight.BOLD),
+                                signup_full_name,
+                                signup_email,
+                                signup_password,
+                                signup_confirm_password,
+                                ft.ElevatedButton("Sign Up", on_click=do_signup),
+                                signup_output,
+                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+                        ),
+                    ],
+                ),
+            ], expand=True, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+        )
+        page.update()
+
+    # Initialize with login view
+    show_login_view()
+
+ft.app(target=main)
