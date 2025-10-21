@@ -52,7 +52,7 @@ def main(page: ft.Page):
                 token["value"] = data["access_token"]
                 user_id["value"] = data["user"]["user_id"]
                 output.value = "Logged in successfully!"
-                output.color = ft.Colors.GREEN
+                output.color = ft.colors.GREEN
                 page.update()
                 show_main_app()
             else:
@@ -66,15 +66,15 @@ def main(page: ft.Page):
                     elif r.status_code == 404:
                         error_msg = "Login endpoint not found. Check API URL."
                 output.value = error_msg
-                output.color = ft.Colors.RED
+                output.color = ft.colors.RED
                 page.update()
         except requests.exceptions.RequestException as ex:
             output.value = f"Network error: {str(ex)}"
-            output.color = ft.Colors.RED
+            output.color = ft.colors.RED
             page.update()
         except Exception as ex:
             output.value = f"Error: {str(ex)}"
-            output.color = ft.Colors.RED
+            output.color = ft.colors.RED
             page.update()
 
     def show_main_app():
@@ -86,28 +86,28 @@ def main(page: ft.Page):
         def create_nav_item(icon, label, index):
             return ft.Container(
                 content=ft.Column([
-                    ft.Icon(icon, size=24, color=ft.Colors.BLUE_600 if index == 0 else ft.Colors.GREY_600),
-                    ft.Text(label, size=12, color=ft.Colors.BLUE_600 if index == 0 else ft.Colors.GREY_600),
+                    ft.Icon(icon, size=24, color=ft.colors.BLUE_600 if index == 0 else ft.colors.GREY_600),
+                    ft.Text(label, size=12, color=ft.colors.BLUE_600 if index == 0 else ft.colors.GREY_600),
                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2),
                 padding=ft.padding.symmetric(horizontal=16, vertical=8),
-                bgcolor=ft.Colors.BLUE_50 if index == 0 else None,
+                bgcolor=ft.colors.BLUE_50 if index == 0 else None,
                 border_radius=ft.border_radius.all(8),
                 ink=True,
                 on_click=lambda _: change_view(index),
             )
         
         nav_items = [
-            create_nav_item(ft.Icons.HOME_ROUNDED, "Home", 0),
-            create_nav_item(ft.Icons.CALENDAR_TODAY_ROUNDED, "Appointments", 1),
-            create_nav_item(ft.Icons.CHECK_CIRCLE_ROUNDED, "Completed", 2),
-            create_nav_item(ft.Icons.PERSON_ROUNDED, "Profile", 3),
+            create_nav_item(ft.icons.HOME_ROUNDED, "Home", 0),
+            create_nav_item(ft.icons.CALENDAR_TODAY_ROUNDED, "Appointments", 1),
+            create_nav_item(ft.icons.CHECK_CIRCLE_ROUNDED, "Completed", 2),
+            create_nav_item(ft.icons.PERSON_ROUNDED, "Profile", 3),
         ]
         
         nav_bar = ft.Container(
             content=ft.Row(nav_items, alignment=ft.MainAxisAlignment.SPACE_EVENLY),
             padding=ft.padding.all(10),
-            bgcolor=ft.Colors.WHITE,
-            shadow_color=ft.Colors.BLACK26,
+            bgcolor=ft.colors.WHITE,
+            shadow_color=ft.colors.BLACK26,
             elevation=8,
         )
         
@@ -117,19 +117,19 @@ def main(page: ft.Page):
                     # App header with gradient
                     ft.Container(
                         content=ft.Row([
-                            ft.Icon(ft.Icons.HEALTH_AND_SAFETY, size=32, color=ft.Colors.WHITE),
-                            ft.Text("Patient Portal", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                            ft.Icon(ft.icons.HEALTH_AND_SAFETY, size=32, color=ft.colors.WHITE),
+                            ft.Text("Patient Portal", size=20, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
                         ], alignment=ft.MainAxisAlignment.START),
                         gradient=ft.LinearGradient(
                             begin=ft.alignment.top_left,
                             end=ft.alignment.bottom_right,
-                            colors=[ft.Colors.BLUE_600, ft.Colors.INDIGO_700],
+                            colors=[ft.colors.BLUE_600, ft.colors.INDIGO_700],
                         ),
                         padding=ft.padding.symmetric(horizontal=20, vertical=15),
                         shadow=ft.BoxShadow(
                             spread_radius=1,
                             blur_radius=8,
-                            color=ft.Colors.BLACK38,
+                            color=ft.colors.BLACK38,
                             offset=ft.Offset(0, 2),
                         ),
                     ),
@@ -137,12 +137,12 @@ def main(page: ft.Page):
                         content=content_area,
                         expand=True,
                         padding=ft.padding.all(20),
-                        bgcolor=ft.Colors.GREY_50,
+                        bgcolor=ft.colors.GREY_50,
                     ),
                     nav_bar
                 ], spacing=0),
                 expand=True,
-                bgcolor=ft.Colors.WHITE,
+                bgcolor=ft.colors.WHITE,
             )
         )
         show_home_view()
@@ -151,13 +151,13 @@ def main(page: ft.Page):
         # Update nav items styling
         for i, nav_item in enumerate(nav_items):
             if i == index:
-                nav_item.bgcolor = ft.Colors.BLUE_50
-                nav_item.content.controls[0].color = ft.Colors.BLUE_600
-                nav_item.content.controls[1].color = ft.Colors.BLUE_600
+                nav_item.bgcolor = ft.colors.BLUE_50
+                nav_item.content.controls[0].color = ft.colors.BLUE_600
+                nav_item.content.controls[1].color = ft.colors.BLUE_600
             else:
                 nav_item.bgcolor = None
-                nav_item.content.controls[0].color = ft.Colors.GREY_600
-                nav_item.content.controls[1].color = ft.Colors.GREY_600
+                nav_item.content.controls[0].color = ft.colors.GREY_600
+                nav_item.content.controls[1].color = ft.colors.GREY_600
         
         if token["value"] is None and index != 0:
             content_area.content = ft.Column(
@@ -186,18 +186,18 @@ def main(page: ft.Page):
         welcome_card = ft.Container(
             content=ft.Column([
                 ft.Row([
-                    ft.Icon(ft.Icons.WAVING_HAND, size=32, color=ft.Colors.AMBER_600),
-                    ft.Text("Welcome back, Patient!", size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900),
+                    ft.Icon(ft.icons.WAVING_HAND, size=32, color=ft.colors.AMBER_600),
+                    ft.Text("Welcome back, Patient!", size=24, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_900),
                 ], alignment=ft.MainAxisAlignment.START, spacing=10),
-                ft.Text("Here's your health overview for today", size=16, color=ft.Colors.GREY_700),
+                ft.Text("Here's your health overview for today", size=16, color=ft.colors.GREY_700),
             ], spacing=8),
             padding=ft.padding.all(20),
-            bgcolor=ft.Colors.WHITE,
+            bgcolor=ft.colors.WHITE,
             border_radius=16,
             shadow=ft.BoxShadow(
                 spread_radius=1,
                 blur_radius=12,
-                color=ft.Colors.BLACK12,
+                color=ft.colors.BLACK12,
                 offset=ft.Offset(0, 4),
             ),
             margin=ft.margin.only(bottom=20),
@@ -207,13 +207,13 @@ def main(page: ft.Page):
         search_section = ft.Container(
             content=ft.Column([
                 ft.Row([
-                    ft.Icon(ft.Icons.SEARCH, size=24, color=ft.Colors.BLUE_600),
-                    ft.Text("Find Hospitals & Treatments", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900),
+                    ft.Icon(ft.icons.SEARCH, size=24, color=ft.colors.BLUE_600),
+                    ft.Text("Find Hospitals & Treatments", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_900),
                     ft.IconButton(
-                        icon=ft.Icons.REFRESH_ROUNDED,
+                        icon=ft.icons.REFRESH_ROUNDED,
                         tooltip="Refresh hospital search",
                         on_click=lambda e: load_nearby(),
-                        icon_color=ft.Colors.BLUE_600,
+                        icon_color=ft.colors.BLUE_600,
                     )
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 ft.Container(height=10),
@@ -227,8 +227,8 @@ def main(page: ft.Page):
                             "🔍 Search",
                             on_click=lambda e: perform_search(),
                             style=ft.ButtonStyle(
-                                bgcolor=ft.Colors.BLUE_600,
-                                color=ft.Colors.WHITE,
+                                bgcolor=ft.colors.BLUE_600,
+                                color=ft.colors.WHITE,
                             ),
                             height=48,
                         )
@@ -236,19 +236,19 @@ def main(page: ft.Page):
                     shadow=ft.BoxShadow(
                         spread_radius=1,
                         blur_radius=8,
-                        color=ft.Colors.BLACK12,
+                        color=ft.colors.BLACK12,
                         offset=ft.Offset(0, 2),
                     ),
                     border_radius=ft.border_radius.all(12),
                 ),
             ], spacing=10),
             padding=ft.padding.all(20),
-            bgcolor=ft.Colors.WHITE,
+            bgcolor=ft.colors.WHITE,
             border_radius=16,
             shadow=ft.BoxShadow(
                 spread_radius=1,
                 blur_radius=12,
-                color=ft.Colors.BLACK12,
+                color=ft.colors.BLACK12,
                 offset=ft.Offset(0, 4),
             ),
             margin=ft.margin.symmetric(vertical=10),
@@ -269,16 +269,16 @@ def main(page: ft.Page):
         # Modern header
         header = ft.Container(
             content=ft.Row([
-                ft.Icon(ft.Icons.CALENDAR_TODAY, size=28, color=ft.Colors.BLUE_600),
-                ft.Text("Today's Appointments", size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900),
+                ft.Icon(ft.icons.CALENDAR_TODAY, size=28, color=ft.colors.BLUE_600),
+                ft.Text("Today's Appointments", size=24, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_900),
             ], alignment=ft.MainAxisAlignment.START, spacing=10),
             padding=ft.padding.all(20),
-            bgcolor=ft.Colors.WHITE,
+            bgcolor=ft.colors.WHITE,
             border_radius=ft.border_radius.all(12),
             shadow=ft.BoxShadow(
                 spread_radius=1,
                 blur_radius=8,
-                color=ft.Colors.BLACK12,
+                color=ft.colors.BLACK12,
                 offset=ft.Offset(0, 2),
             ),
             margin=ft.margin.only(bottom=20),
@@ -297,16 +297,16 @@ def main(page: ft.Page):
         # Modern header
         header = ft.Container(
             content=ft.Row([
-                ft.Icon(ft.Icons.CHECK_CIRCLE, size=28, color=ft.Colors.GREEN_600),
-                ft.Text("Completed Appointments", size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_900),
+                ft.Icon(ft.icons.CHECK_CIRCLE, size=28, color=ft.colors.GREEN_600),
+                ft.Text("Completed Appointments", size=24, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_900),
             ], alignment=ft.MainAxisAlignment.START, spacing=10),
             padding=ft.padding.all(20),
-            bgcolor=ft.Colors.WHITE,
+            bgcolor=ft.colors.WHITE,
             border_radius=ft.border_radius.all(12),
             shadow=ft.BoxShadow(
                 spread_radius=1,
                 blur_radius=8,
-                color=ft.Colors.BLACK12,
+                color=ft.colors.BLACK12,
                 offset=ft.Offset(0, 2),
             ),
             margin=ft.margin.only(bottom=20),
@@ -323,18 +323,18 @@ def main(page: ft.Page):
         if not token["value"]:
             content_area.content = ft.Container(
                 content=ft.Column([
-                    ft.Icon(ft.Icons.PERSON_OFF, size=64, color=ft.Colors.GREY_400),
+                    ft.Icon(ft.icons.PERSON_OFF, size=64, color=ft.colors.GREY_400),
                     ft.Container(height=16),
-                    ft.Text("Profile Access Required", size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_700, text_align=ft.TextAlign.CENTER),
+                    ft.Text("Profile Access Required", size=24, weight=ft.FontWeight.BOLD, color=ft.colors.GREY_700, text_align=ft.TextAlign.CENTER),
                     ft.Container(height=8),
-                    ft.Text("Please login to view your profile information", size=16, color=ft.Colors.GREY_600, text_align=ft.TextAlign.CENTER),
+                    ft.Text("Please login to view your profile information", size=16, color=ft.colors.GREY_600, text_align=ft.TextAlign.CENTER),
                     ft.Container(height=24),
                     ft.ElevatedButton(
                         "Go to Login",
                         on_click=lambda _: show_login_view(),
                         style=ft.ButtonStyle(
-                            bgcolor=ft.Colors.BLUE_600,
-                            color=ft.Colors.WHITE,
+                            bgcolor=ft.colors.BLUE_600,
+                            color=ft.colors.WHITE,
                             elevation=4,
                         ),
                         width=200,
@@ -350,18 +350,18 @@ def main(page: ft.Page):
         content_area.content = ft.Container(
             content=ft.Column([
                 ft.Row([
-                    ft.Icon(ft.Icons.PERSON, size=28, color=ft.Colors.BLUE_600),
-                    ft.Text("Profile", size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900),
+                    ft.Icon(ft.icons.PERSON, size=28, color=ft.colors.BLUE_600),
+                    ft.Text("Profile", size=24, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_900),
                 ], alignment=ft.MainAxisAlignment.START, spacing=10),
                 ft.Container(height=16),
                 ft.Container(
                     content=ft.Row([
-                        ft.ProgressRing(color=ft.Colors.BLUE_600),
+                        ft.ProgressRing(color=ft.colors.BLUE_600),
                         ft.Container(width=12),
-                        ft.Text("Loading profile information...", size=16, color=ft.Colors.BLUE_600),
+                        ft.Text("Loading profile information...", size=16, color=ft.colors.BLUE_600),
                     ], alignment=ft.MainAxisAlignment.CENTER),
                     padding=ft.padding.all(20),
-                    bgcolor=ft.Colors.BLUE_50,
+                    bgcolor=ft.colors.BLUE_50,
                     border_radius=ft.border_radius.all(12),
                 ),
             ], spacing=0),
@@ -376,7 +376,7 @@ def main(page: ft.Page):
                 content_area.content = ft.Column([
                     ft.Text("Profile", size=20, weight=ft.FontWeight.BOLD),
                     ft.Divider(),
-                    ft.Text("Please login to view your profile", color=ft.Colors.RED),
+                    ft.Text("Please login to view your profile", color=ft.colors.RED),
                 ], expand=True, scroll=ft.ScrollMode.AUTO)
                 page.update()
                 return
@@ -392,12 +392,12 @@ def main(page: ft.Page):
                         ft.ElevatedButton(
                             "🔄 Refresh",
                             on_click=lambda _: load_profile_data(),
-                            icon=ft.Icons.REFRESH
+                            icon=ft.icons.REFRESH
                         ),
                         ft.ElevatedButton(
                             "Logout",
                             on_click=logout,
-                            icon=ft.Icons.LOGOUT
+                            icon=ft.icons.LOGOUT
                         ),
                     ]),
                     ft.Divider(),
@@ -406,7 +406,7 @@ def main(page: ft.Page):
                         content=ft.Container(
                             content=ft.Column([
                                 ft.Row([
-                                    ft.Icon(ft.Icons.PERSON, color=ft.Colors.BLUE),
+                                    ft.Icon(ft.icons.PERSON, color=ft.colors.BLUE),
                                     ft.Text("Personal Details", size=16, weight=ft.FontWeight.BOLD),
                                 ]),
                                 ft.Divider(),
@@ -425,14 +425,14 @@ def main(page: ft.Page):
                 content_area.content = ft.Column([
                     ft.Text("Profile", size=20, weight=ft.FontWeight.BOLD),
                     ft.Divider(),
-                    ft.Text(f"Error loading profile: {r.json().get('message', 'Unknown error')}", color=ft.Colors.RED),
+                    ft.Text(f"Error loading profile: {r.json().get('message', 'Unknown error')}", color=ft.colors.RED),
                 ], expand=True, scroll=ft.ScrollMode.AUTO)
                 page.update()
         except Exception as ex:
             content_area.content = ft.Column([
                 ft.Text("Profile", size=20, weight=ft.FontWeight.BOLD),
                 ft.Divider(),
-                ft.Text(f"Error: {str(ex)}", color=ft.Colors.RED),
+                ft.Text(f"Error: {str(ex)}", color=ft.colors.RED),
             ], expand=True, scroll=ft.ScrollMode.AUTO)
             page.update()
 
@@ -521,9 +521,9 @@ def main(page: ft.Page):
     def load_nearby(search_query=None):
         hospitals_list.controls.clear()
         if search_query:
-            hospitals_list.controls.append(ft.Text(f"🔍 Searching for '{search_query}'...", color=ft.Colors.BLUE))
+            hospitals_list.controls.append(ft.Text(f"🔍 Searching for '{search_query}'...", color=ft.colors.BLUE))
         else:
-            hospitals_list.controls.append(ft.Text("🌍 Getting your location...", color=ft.Colors.BLUE))
+            hospitals_list.controls.append(ft.Text("🌍 Getting your location...", color=ft.colors.BLUE))
         page.update()
         
         try:
@@ -536,11 +536,11 @@ def main(page: ft.Page):
             if location_success and user_location["lat"] is not None:
                 lat, lon = user_location["lat"], user_location["lon"]
                 hospitals_list.controls.clear()
-                hospitals_list.controls.append(ft.Text(f"📍 Your Location: {lat:.4f}, {lon:.4f}", color=ft.Colors.GREEN, size=14))
+                hospitals_list.controls.append(ft.Text(f"📍 Your Location: {lat:.4f}, {lon:.4f}", color=ft.colors.GREEN, size=14))
                 if search_query:
-                    hospitals_list.controls.append(ft.Text(f"🔍 Searching for '{search_query}'...", color=ft.Colors.BLUE))
+                    hospitals_list.controls.append(ft.Text(f"🔍 Searching for '{search_query}'...", color=ft.colors.BLUE))
                 else:
-                    hospitals_list.controls.append(ft.Text("🔍 Searching for nearby hospitals...", color=ft.Colors.BLUE))
+                    hospitals_list.controls.append(ft.Text("🔍 Searching for nearby hospitals...", color=ft.colors.BLUE))
                 page.update()
                 
                 # Use sample hospitals for now
@@ -569,8 +569,8 @@ def main(page: ft.Page):
                 ]
                 
                 hospitals_list.controls.clear()
-                hospitals_list.controls.append(ft.Text(f"🏥 Found {len(sample_hospitals)} nearby hospitals:", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN))
-                hospitals_list.controls.append(ft.Text(f"📍 Based on your location: {lat:.4f}, {lon:.4f}", size=12, color=ft.Colors.BLUE))
+                hospitals_list.controls.append(ft.Text(f"🏥 Found {len(sample_hospitals)} nearby hospitals:", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN))
+                hospitals_list.controls.append(ft.Text(f"📍 Based on your location: {lat:.4f}, {lon:.4f}", size=12, color=ft.colors.BLUE))
                 
                 for i, h in enumerate(sample_hospitals, 1):
                     distance = h.get('distance_km', '?')
@@ -580,49 +580,49 @@ def main(page: ft.Page):
                             content=ft.Column([
                                 ft.Row([
                                     ft.Container(
-                                        content=ft.Text(f"#{i}", size=12, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
-                                        bgcolor=ft.Colors.BLUE_600,
+                                        content=ft.Text(f"#{i}", size=12, color=ft.colors.WHITE, weight=ft.FontWeight.BOLD),
+                                        bgcolor=ft.colors.BLUE_600,
                                         border_radius=ft.border_radius.all(8),
                                         padding=ft.padding.symmetric(horizontal=8, vertical=2),
                                         alignment=ft.alignment.center,
                                     ),
                                     ft.Container(width=10),
-                                    ft.Text(h['name'], size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900, expand=True),
-                                    ft.Icon(ft.Icons.LOCAL_HOSPITAL, size=24, color=ft.Colors.BLUE_600),
+                                    ft.Text(h['name'], size=18, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_900, expand=True),
+                                    ft.Icon(ft.icons.LOCAL_HOSPITAL, size=24, color=ft.colors.BLUE_600),
                                 ], alignment=ft.MainAxisAlignment.START),
                                 ft.Container(height=8),
                                 ft.Row([
-                                    ft.Icon(ft.Icons.LOCATION_ON, size=16, color=ft.Colors.GREY_600),
-                                    ft.Text(h['address'], size=14, color=ft.Colors.GREY_700, expand=True),
+                                    ft.Icon(ft.icons.LOCATION_ON, size=16, color=ft.colors.GREY_600),
+                                    ft.Text(h['address'], size=14, color=ft.colors.GREY_700, expand=True),
                                 ], spacing=5),
                                 ft.Container(height=4),
                                 ft.Row([
-                                    ft.Icon(ft.Icons.PHONE, size=16, color=ft.Colors.GREY_600),
-                                    ft.Text(phone, size=14, color=ft.Colors.GREY_700),
+                                    ft.Icon(ft.icons.PHONE, size=16, color=ft.colors.GREY_600),
+                                    ft.Text(phone, size=14, color=ft.colors.GREY_700),
                                 ], spacing=5),
                                 ft.Container(height=4),
                                 ft.Row([
-                                    ft.Icon(ft.Icons.ATTACH_MONEY, size=16, color=ft.Colors.GREY_600),
-                                    ft.Text(h.get('fee_details', 'Contact for pricing'), size=14, color=ft.Colors.GREY_700),
+                                    ft.Icon(ft.icons.ATTACH_MONEY, size=16, color=ft.colors.GREY_600),
+                                    ft.Text(h.get('fee_details', 'Contact for pricing'), size=14, color=ft.colors.GREY_700),
                                 ], spacing=5),
                                 ft.Container(height=8),
                                 ft.Container(
                                     content=ft.Row([
-                                        ft.Icon(ft.Icons.DIRECTIONS, size=14, color=ft.Colors.BLUE_600),
-                                        ft.Text(f"{distance} km away", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_600),
+                                        ft.Icon(ft.icons.DIRECTIONS, size=14, color=ft.colors.BLUE_600),
+                                        ft.Text(f"{distance} km away", size=14, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_600),
                                     ], spacing=4),
-                                    bgcolor=ft.Colors.BLUE_50,
+                                    bgcolor=ft.colors.BLUE_50,
                                     border_radius=ft.border_radius.all(6),
                                     padding=ft.padding.symmetric(horizontal=8, vertical=4),
                                 ),
                             ], spacing=0),
                             padding=ft.padding.all(16),
-                            bgcolor=ft.Colors.WHITE,
+                            bgcolor=ft.colors.WHITE,
                             border_radius=ft.border_radius.all(12),
                             shadow=ft.BoxShadow(
                                 spread_radius=1,
                                 blur_radius=8,
-                                color=ft.Colors.BLACK12,
+                                color=ft.colors.BLACK12,
                                 offset=ft.Offset(0, 2),
                             ),
                             margin=ft.margin.symmetric(vertical=6),
@@ -630,13 +630,13 @@ def main(page: ft.Page):
                     )
             else:
                 hospitals_list.controls.clear()
-                hospitals_list.controls.append(ft.Text("❌ Could not get your location", color=ft.Colors.RED, size=16))
-                hospitals_list.controls.append(ft.Text("📍 Using sample hospitals instead...", color=ft.Colors.ORANGE))
+                hospitals_list.controls.append(ft.Text("❌ Could not get your location", color=ft.colors.RED, size=16))
+                hospitals_list.controls.append(ft.Text("📍 Using sample hospitals instead...", color=ft.colors.ORANGE))
                 
         except Exception as ex:
             print(f"Error in load_nearby: {ex}")
             hospitals_list.controls.clear()
-            hospitals_list.controls.append(ft.Text(f"❌ Error: {str(ex)}", color=ft.Colors.RED, size=16))
+            hospitals_list.controls.append(ft.Text(f"❌ Error: {str(ex)}", color=ft.colors.RED, size=16))
             hospitals_list.controls.append(ft.Text("💡 Please check your internet connection", size=12))
             hospitals_list.controls.append(ft.Text("🔄 Try clicking the refresh button to retry", size=12))
         
@@ -656,9 +656,9 @@ def main(page: ft.Page):
             appt_list.controls.append(
                 ft.Container(
                     content=ft.Column([
-                        ft.Icon(ft.Icons.LOGIN_REQUIRED, size=48, color=ft.Colors.ORANGE_400),
+                        ft.Icon(ft.icons.LOGIN_REQUIRED, size=48, color=ft.colors.ORANGE_400),
                         ft.Container(height=16),
-                        ft.Text("Please login to view appointments", size=16, color=ft.Colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
+                        ft.Text("Please login to view appointments", size=16, color=ft.colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                     padding=ft.padding.all(40),
                     alignment=ft.alignment.center,
@@ -678,20 +678,20 @@ def main(page: ft.Page):
                 if active_appointments:
                     for a in active_appointments:
                         status_color = {
-                            'Scheduled': ft.Colors.BLUE_600,
-                            'Confirmed': ft.Colors.GREEN_600,
-                            'Pending': ft.Colors.ORANGE_600,
-                            'Cancelled': ft.Colors.RED_600,
-                        }.get(a.get('status'), ft.Colors.GREY_600)
+                            'Scheduled': ft.colors.BLUE_600,
+                            'Confirmed': ft.colors.GREEN_600,
+                            'Pending': ft.colors.ORANGE_600,
+                            'Cancelled': ft.colors.RED_600,
+                        }.get(a.get('status'), ft.colors.GREY_600)
 
                         appt_list.controls.append(
                             ft.Container(
                                 content=ft.Column([
                                     ft.Row([
-                                        ft.Icon(ft.Icons.EVENT, size=24, color=status_color),
-                                        ft.Text(f"{a.get('date', 'Unknown date')} at {a.get('time', 'Unknown time')}", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900, expand=True),
+                                        ft.Icon(ft.icons.EVENT, size=24, color=status_color),
+                                        ft.Text(f"{a.get('date', 'Unknown date')} at {a.get('time', 'Unknown time')}", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_900, expand=True),
                                         ft.Container(
-                                            content=ft.Text(a.get('status', 'Unknown'), size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                                            content=ft.Text(a.get('status', 'Unknown'), size=12, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
                                             bgcolor=status_color,
                                             border_radius=ft.border_radius.all(12),
                                             padding=ft.padding.symmetric(horizontal=12, vertical=4),
@@ -699,17 +699,17 @@ def main(page: ft.Page):
                                     ], alignment=ft.MainAxisAlignment.START, spacing=10),
                                     ft.Container(height=8),
                                     ft.Row([
-                                        ft.Icon(ft.Icons.LOCAL_HOSPITAL, size=16, color=ft.Colors.GREY_600),
-                                        ft.Text(f"Hospital: {a.get('hospital_name', 'Not specified')}", size=14, color=ft.Colors.GREY_700),
+                                        ft.Icon(ft.icons.LOCAL_HOSPITAL, size=16, color=ft.colors.GREY_600),
+                                        ft.Text(f"Hospital: {a.get('hospital_name', 'Not specified')}", size=14, color=ft.colors.GREY_700),
                                     ], spacing=5),
                                 ], spacing=0),
                                 padding=ft.padding.all(16),
-                                bgcolor=ft.Colors.WHITE,
+                                bgcolor=ft.colors.WHITE,
                                 border_radius=ft.border_radius.all(12),
                                 shadow=ft.BoxShadow(
                                     spread_radius=1,
                                     blur_radius=8,
-                                    color=ft.Colors.BLACK12,
+                                    color=ft.colors.BLACK12,
                                     offset=ft.Offset(0, 2),
                                 ),
                                 margin=ft.margin.symmetric(vertical=6),
@@ -719,11 +719,11 @@ def main(page: ft.Page):
                     appt_list.controls.append(
                         ft.Container(
                             content=ft.Column([
-                                ft.Icon(ft.Icons.EVENT_BUSY, size=64, color=ft.Colors.GREY_400),
+                                ft.Icon(ft.icons.EVENT_BUSY, size=64, color=ft.colors.GREY_400),
                                 ft.Container(height=16),
-                                ft.Text("No appointments scheduled for today", size=18, color=ft.Colors.GREY_600, text_align=ft.TextAlign.CENTER),
+                                ft.Text("No appointments scheduled for today", size=18, color=ft.colors.GREY_600, text_align=ft.TextAlign.CENTER),
                                 ft.Container(height=8),
-                                ft.Text("Your upcoming appointments will appear here", size=14, color=ft.Colors.GREY_500, text_align=ft.TextAlign.CENTER),
+                                ft.Text("Your upcoming appointments will appear here", size=14, color=ft.colors.GREY_500, text_align=ft.TextAlign.CENTER),
                             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                             padding=ft.padding.all(40),
                             alignment=ft.alignment.center,
@@ -741,14 +741,14 @@ def main(page: ft.Page):
                 appt_list.controls.append(
                     ft.Container(
                         content=ft.Column([
-                            ft.Icon(ft.Icons.ERROR, size=48, color=ft.Colors.RED_400),
+                            ft.Icon(ft.icons.ERROR, size=48, color=ft.colors.RED_400),
                             ft.Container(height=16),
-                            ft.Text(error_msg, size=16, color=ft.Colors.RED_600, text_align=ft.TextAlign.CENTER),
+                            ft.Text(error_msg, size=16, color=ft.colors.RED_600, text_align=ft.TextAlign.CENTER),
                             ft.Container(height=8),
                             ft.ElevatedButton(
                                 "Retry",
                                 on_click=lambda e: load_appointments(),
-                                style=ft.ButtonStyle(bgcolor=ft.Colors.RED_600, color=ft.Colors.WHITE),
+                                style=ft.ButtonStyle(bgcolor=ft.colors.RED_600, color=ft.colors.WHITE),
                             ),
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                         padding=ft.padding.all(40),
@@ -759,14 +759,14 @@ def main(page: ft.Page):
             appt_list.controls.append(
                 ft.Container(
                     content=ft.Column([
-                        ft.Icon(ft.Icons.WIFI_OFF, size=48, color=ft.Colors.ORANGE_400),
+                        ft.Icon(ft.icons.WIFI_OFF, size=48, color=ft.colors.ORANGE_400),
                         ft.Container(height=16),
-                        ft.Text("Network error. Please check your connection.", size=16, color=ft.Colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
+                        ft.Text("Network error. Please check your connection.", size=16, color=ft.colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
                         ft.Container(height=8),
                         ft.ElevatedButton(
                             "Retry",
                             on_click=lambda e: load_appointments(),
-                            style=ft.ButtonStyle(bgcolor=ft.Colors.ORANGE_600, color=ft.Colors.WHITE),
+                            style=ft.ButtonStyle(bgcolor=ft.colors.ORANGE_600, color=ft.colors.WHITE),
                         ),
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                     padding=ft.padding.all(40),
@@ -777,14 +777,14 @@ def main(page: ft.Page):
             appt_list.controls.append(
                 ft.Container(
                     content=ft.Column([
-                        ft.Icon(ft.Icons.BUG_REPORT, size=48, color=ft.Colors.RED_400),
+                        ft.Icon(ft.icons.BUG_REPORT, size=48, color=ft.colors.RED_400),
                         ft.Container(height=16),
-                        ft.Text(f"Error: {str(ex)}", size=16, color=ft.Colors.RED_600, text_align=ft.TextAlign.CENTER),
+                        ft.Text(f"Error: {str(ex)}", size=16, color=ft.colors.RED_600, text_align=ft.TextAlign.CENTER),
                         ft.Container(height=8),
                         ft.ElevatedButton(
                             "Retry",
                             on_click=lambda e: load_appointments(),
-                            style=ft.ButtonStyle(bgcolor=ft.Colors.RED_600, color=ft.Colors.WHITE),
+                            style=ft.ButtonStyle(bgcolor=ft.colors.RED_600, color=ft.colors.WHITE),
                         ),
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                     padding=ft.padding.all(40),
@@ -800,9 +800,9 @@ def main(page: ft.Page):
             completed_appt_list.controls.append(
                 ft.Container(
                     content=ft.Column([
-                        ft.Icon(ft.Icons.LOGIN_REQUIRED, size=48, color=ft.Colors.ORANGE_400),
+                        ft.Icon(ft.icons.LOGIN_REQUIRED, size=48, color=ft.colors.ORANGE_400),
                         ft.Container(height=16),
-                        ft.Text("Please login to view appointments", size=16, color=ft.Colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
+                        ft.Text("Please login to view appointments", size=16, color=ft.colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                     padding=ft.padding.all(40),
                     alignment=ft.alignment.center,
@@ -825,28 +825,28 @@ def main(page: ft.Page):
                             ft.Container(
                                 content=ft.Column([
                                     ft.Row([
-                                        ft.Icon(ft.Icons.CHECK_CIRCLE, size=24, color=ft.Colors.GREEN_600),
-                                        ft.Text(f"{a.get('date', 'Unknown date')} at {a.get('time', 'Unknown time')}", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_900, expand=True),
+                                        ft.Icon(ft.icons.CHECK_CIRCLE, size=24, color=ft.colors.GREEN_600),
+                                        ft.Text(f"{a.get('date', 'Unknown date')} at {a.get('time', 'Unknown time')}", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_900, expand=True),
                                         ft.Container(
-                                            content=ft.Text("Completed", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                                            bgcolor=ft.Colors.GREEN_600,
+                                            content=ft.Text("Completed", size=12, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
+                                            bgcolor=ft.colors.GREEN_600,
                                             border_radius=ft.border_radius.all(12),
                                             padding=ft.padding.symmetric(horizontal=12, vertical=4),
                                         ),
                                     ], alignment=ft.MainAxisAlignment.START, spacing=10),
                                     ft.Container(height=8),
                                     ft.Row([
-                                        ft.Icon(ft.Icons.LOCAL_HOSPITAL, size=16, color=ft.Colors.GREY_600),
-                                        ft.Text(f"Hospital: {a.get('hospital_name', 'Not specified')}", size=14, color=ft.Colors.GREY_700),
+                                        ft.Icon(ft.icons.LOCAL_HOSPITAL, size=16, color=ft.colors.GREY_600),
+                                        ft.Text(f"Hospital: {a.get('hospital_name', 'Not specified')}", size=14, color=ft.colors.GREY_700),
                                     ], spacing=5),
                                 ], spacing=0),
                                 padding=ft.padding.all(16),
-                                bgcolor=ft.Colors.WHITE,
+                                bgcolor=ft.colors.WHITE,
                                 border_radius=ft.border_radius.all(12),
                                 shadow=ft.BoxShadow(
                                     spread_radius=1,
                                     blur_radius=8,
-                                    color=ft.Colors.BLACK12,
+                                    color=ft.colors.BLACK12,
                                     offset=ft.Offset(0, 2),
                                 ),
                                 margin=ft.margin.symmetric(vertical=6),
@@ -856,11 +856,11 @@ def main(page: ft.Page):
                     completed_appt_list.controls.append(
                         ft.Container(
                             content=ft.Column([
-                                ft.Icon(ft.Icons.CHECK_CIRCLE_OUTLINE, size=64, color=ft.Colors.GREY_400),
+                                ft.Icon(ft.icons.CHECK_CIRCLE_OUTLINE, size=64, color=ft.colors.GREY_400),
                                 ft.Container(height=16),
-                                ft.Text("No completed appointments found", size=18, color=ft.Colors.GREY_600, text_align=ft.TextAlign.CENTER),
+                                ft.Text("No completed appointments found", size=18, color=ft.colors.GREY_600, text_align=ft.TextAlign.CENTER),
                                 ft.Container(height=8),
-                                ft.Text("Your completed appointments will appear here", size=14, color=ft.Colors.GREY_500, text_align=ft.TextAlign.CENTER),
+                                ft.Text("Your completed appointments will appear here", size=14, color=ft.colors.GREY_500, text_align=ft.TextAlign.CENTER),
                             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                             padding=ft.padding.all(40),
                             alignment=ft.alignment.center,
@@ -878,14 +878,14 @@ def main(page: ft.Page):
                 completed_appt_list.controls.append(
                     ft.Container(
                         content=ft.Column([
-                            ft.Icon(ft.Icons.ERROR, size=48, color=ft.Colors.RED_400),
+                            ft.Icon(ft.icons.ERROR, size=48, color=ft.colors.RED_400),
                             ft.Container(height=16),
-                            ft.Text(error_msg, size=16, color=ft.Colors.RED_600, text_align=ft.TextAlign.CENTER),
+                            ft.Text(error_msg, size=16, color=ft.colors.RED_600, text_align=ft.TextAlign.CENTER),
                             ft.Container(height=8),
                             ft.ElevatedButton(
                                 "Retry",
                                 on_click=lambda e: load_completed_appointments(),
-                                style=ft.ButtonStyle(bgcolor=ft.Colors.RED_600, color=ft.Colors.WHITE),
+                                style=ft.ButtonStyle(bgcolor=ft.colors.RED_600, color=ft.colors.WHITE),
                             ),
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                         padding=ft.padding.all(40),
@@ -896,14 +896,14 @@ def main(page: ft.Page):
             completed_appt_list.controls.append(
                 ft.Container(
                     content=ft.Column([
-                        ft.Icon(ft.Icons.WIFI_OFF, size=48, color=ft.Colors.ORANGE_400),
+                        ft.Icon(ft.icons.WIFI_OFF, size=48, color=ft.colors.ORANGE_400),
                         ft.Container(height=16),
-                        ft.Text("Network error. Please check your connection.", size=16, color=ft.Colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
+                        ft.Text("Network error. Please check your connection.", size=16, color=ft.colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
                         ft.Container(height=8),
                         ft.ElevatedButton(
                             "Retry",
                             on_click=lambda e: load_completed_appointments(),
-                            style=ft.ButtonStyle(bgcolor=ft.Colors.ORANGE_600, color=ft.Colors.WHITE),
+                            style=ft.ButtonStyle(bgcolor=ft.colors.ORANGE_600, color=ft.colors.WHITE),
                         ),
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                     padding=ft.padding.all(40),
@@ -914,14 +914,14 @@ def main(page: ft.Page):
             completed_appt_list.controls.append(
                 ft.Container(
                     content=ft.Column([
-                        ft.Icon(ft.Icons.BUG_REPORT, size=48, color=ft.Colors.RED_400),
+                        ft.Icon(ft.icons.BUG_REPORT, size=48, color=ft.colors.RED_400),
                         ft.Container(height=16),
-                        ft.Text(f"Error: {str(ex)}", size=16, color=ft.Colors.RED_600, text_align=ft.TextAlign.CENTER),
+                        ft.Text(f"Error: {str(ex)}", size=16, color=ft.colors.RED_600, text_align=ft.TextAlign.CENTER),
                         ft.Container(height=8),
                         ft.ElevatedButton(
                             "Retry",
                             on_click=lambda e: load_completed_appointments(),
-                            style=ft.ButtonStyle(bgcolor=ft.Colors.RED_600, color=ft.Colors.WHITE),
+                            style=ft.ButtonStyle(bgcolor=ft.colors.RED_600, color=ft.colors.WHITE),
                         ),
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                     padding=ft.padding.all(40),
@@ -935,14 +935,14 @@ def main(page: ft.Page):
             # Validate passwords match
             if signup_password.value != signup_confirm_password.value:
                 signup_output.value = "Passwords do not match"
-                signup_output.color = ft.Colors.RED
+                signup_output.color = ft.colors.RED
                 page.update()
                 return
             
             # Validate required fields
             if not all([signup_email.value, signup_password.value, signup_full_name.value]):
                 signup_output.value = "Please fill in all fields"
-                signup_output.color = ft.Colors.RED
+                signup_output.color = ft.colors.RED
                 page.update()
                 return
             
@@ -958,7 +958,7 @@ def main(page: ft.Page):
                 token["value"] = data["access_token"]
                 user_id["value"] = data["user"]["user_id"]
                 signup_output.value = "Account created successfully!"
-                signup_output.color = ft.Colors.GREEN
+                signup_output.color = ft.colors.GREEN
                 page.update()
                 show_main_app()
             else:
@@ -972,15 +972,15 @@ def main(page: ft.Page):
                     elif r.status_code == 404:
                         error_msg = "Registration endpoint not found. Check API URL."
                 signup_output.value = error_msg
-                signup_output.color = ft.Colors.RED
+                signup_output.color = ft.colors.RED
                 page.update()
         except requests.exceptions.RequestException as ex:
             signup_output.value = f"Network error: {str(ex)}"
-            signup_output.color = ft.Colors.RED
+            signup_output.color = ft.colors.RED
             page.update()
         except Exception as ex:
             signup_output.value = f"Error: {str(ex)}"
-            signup_output.color = ft.Colors.RED
+            signup_output.color = ft.colors.RED
             page.update()
 
     def show_login_view():
@@ -991,7 +991,7 @@ def main(page: ft.Page):
             gradient=ft.LinearGradient(
                 begin=ft.alignment.top_left,
                 end=ft.alignment.bottom_right,
-                colors=[ft.Colors.BLUE_400, ft.Colors.INDIGO_600, ft.Colors.PURPLE_600],
+                colors=[ft.colors.BLUE_400, ft.colors.INDIGO_600, ft.colors.PURPLE_600],
             ),
             expand=True,
         )
@@ -1001,10 +1001,10 @@ def main(page: ft.Page):
             content=ft.Column([
                 # Header with icon
                 ft.Row([
-                    ft.Icon(ft.Icons.HEALTH_AND_SAFETY, size=48, color=ft.Colors.WHITE),
+                    ft.Icon(ft.icons.HEALTH_AND_SAFETY, size=48, color=ft.colors.WHITE),
                     ft.Column([
-                        ft.Text("Patient Portal", size=28, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                        ft.Text("Your Health, Our Priority", size=14, color=ft.Colors.WHITE70),
+                        ft.Text("Patient Portal", size=28, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
+                        ft.Text("Your Health, Our Priority", size=14, color=ft.colors.WHITE70),
                     ], spacing=0),
                 ], alignment=ft.MainAxisAlignment.CENTER, spacing=15),
 
@@ -1015,16 +1015,16 @@ def main(page: ft.Page):
                     content=ft.Tabs(
                         selected_index=0,
                         animation_duration=300,
-                        indicator_color=ft.Colors.WHITE,
-                        label_color=ft.Colors.WHITE70,
-                        unselected_label_color=ft.Colors.WHITE54,
+                        indicator_color=ft.colors.WHITE,
+                        label_color=ft.colors.WHITE70,
+                        unselected_label_color=ft.colors.WHITE54,
                         tabs=[
                              ft.Tab(
                                  text="Login",
                                  content=ft.Container(
                                      content=ft.Column([
                                          ft.Container(height=20),
-                                         ft.Text("Welcome Back", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                                         ft.Text("Welcome Back", size=20, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
                                          ft.Container(height=10),
                                          email,
                                          ft.Container(height=10),
@@ -1036,18 +1036,18 @@ def main(page: ft.Page):
                                              width=250,
                                              height=50,
                                              style=ft.ButtonStyle(
-                                                 bgcolor=ft.Colors.WHITE,
-                                                 color=ft.Colors.BLUE_600,
+                                                 bgcolor=ft.colors.WHITE,
+                                                 color=ft.colors.BLUE_600,
                                                  elevation=8,
-                                                 shadow_color=ft.Colors.BLACK38,
+                                                 shadow_color=ft.colors.BLACK38,
                                              ),
-                                             icon=ft.Icons.LOGIN,
+                                             icon=ft.icons.LOGIN,
                                          ),
                                          ft.Container(height=10),
                                          output,
                                      ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                                      padding=ft.padding.all(20),
-                                     bgcolor=ft.Colors.WHITE,
+                                     bgcolor=ft.colors.WHITE,
                                      border_radius=12,
                                  )
                              ),
@@ -1056,7 +1056,7 @@ def main(page: ft.Page):
                                  content=ft.Container(
                                      content=ft.Column([
                                          ft.Container(height=20),
-                                         ft.Text("Create Your Account", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                                         ft.Text("Create Your Account", size=20, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
                                          ft.Container(height=10),
                                          signup_full_name,
                                          ft.Container(height=10),
@@ -1072,29 +1072,29 @@ def main(page: ft.Page):
                                              width=250,
                                              height=50,
                                              style=ft.ButtonStyle(
-                                                 bgcolor=ft.Colors.WHITE,
-                                                 color=ft.Colors.BLUE_600,
+                                                 bgcolor=ft.colors.WHITE,
+                                                 color=ft.colors.BLUE_600,
                                                  elevation=8,
-                                                 shadow_color=ft.Colors.BLACK38,
+                                                 shadow_color=ft.colors.BLACK38,
                                              ),
-                                             icon=ft.Icons.PERSON_ADD,
+                                             icon=ft.icons.PERSON_ADD,
                                          ),
                                          ft.Container(height=10),
                                          signup_output,
                                      ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                                      padding=ft.padding.all(20),
-                                     bgcolor=ft.Colors.WHITE,
+                                     bgcolor=ft.colors.WHITE,
                                      border_radius=12,
                                  )
                              ),
                         ],
                     ),
-                    bgcolor=ft.Colors.WHITE10,
+                    bgcolor=ft.colors.WHITE10,
                     border_radius=16,
                     shadow=ft.BoxShadow(
                         spread_radius=2,
                         blur_radius=16,
-                        color=ft.Colors.BLACK38,
+                        color=ft.colors.BLACK38,
                         offset=ft.Offset(0, 4),
                     ),
                 ),
