@@ -29,37 +29,35 @@ def main(page: ft.Page):
     signup_full_name = ft.TextField(label="Full Name")
     signup_output = ft.Text()
     
-    # Navigation components with modern styling
-    nav_bar = ft.NavigationBar(
-        destinations=[
-            ft.NavigationBarDestination(
-                icon=ft.Icons.HOME_ROUNDED,
-                label="Home",
-                selected_icon=ft.Icons.HOME_ROUNDED
-            ),
-            ft.NavigationBarDestination(
-                icon=ft.Icons.CALENDAR_TODAY_ROUNDED,
-                label="Appointments",
-                selected_icon=ft.Icons.CALENDAR_TODAY_ROUNDED
-            ),
-            ft.NavigationBarDestination(
-                icon=ft.Icons.CHECK_CIRCLE_ROUNDED,
-                label="Completed",
-                selected_icon=ft.Icons.CHECK_CIRCLE_ROUNDED
-            ),
-            ft.NavigationBarDestination(
-                icon=ft.Icons.PERSON_ROUNDED,
-                label="Profile",
-                selected_icon=ft.Icons.PERSON_ROUNDED
-            ),
-        ],
-        on_change=change_view,
-        height=70,
+# Navigation components with modern styling (compatible with older Flet versions)
+    nav_items = []
+    
+    def create_nav_item(icon, label, index):
+        return ft.Container(
+            content=ft.Column([
+                ft.Icon(icon, size=24, color=ft.Colors.BLUE_600 if index == 0 else ft.Colors.GREY_600),
+                ft.Text(label, size=12, color=ft.Colors.BLUE_600 if index == 0 else ft.Colors.GREY_600),
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2),
+            padding=ft.padding.symmetric(horizontal=16, vertical=8),
+            bgcolor=ft.Colors.BLUE_50 if index == 0 else None,
+            border_radius=ft.border_radius.all(8),
+            ink=True,
+            on_click=lambda _: change_view(index),
+        )
+    
+    nav_items = [
+        create_nav_item(ft.Icons.HOME_ROUNDED, "Home", 0),
+        create_nav_item(ft.Icons.CALENDAR_TODAY_ROUNDED, "Appointments", 1),
+        create_nav_item(ft.Icons.CHECK_CIRCLE_ROUNDED, "Completed", 2),
+        create_nav_item(ft.Icons.PERSON_ROUNDED, "Profile", 3),
+    ]
+    
+    nav_bar = ft.Container(
+        content=ft.Row(nav_items, alignment=ft.MainAxisAlignment.SPACE_EVENLY),
+        padding=ft.padding.all(10),
         bgcolor=ft.Colors.WHITE,
         shadow_color=ft.Colors.BLACK26,
         elevation=8,
-        indicator_color=ft.Colors.BLUE_600,
-        indicator_shape=ft.RoundedRectangleBorder(radius=20),
     )
     
     # Content areas
@@ -151,8 +149,18 @@ def do_login(e):
         )
         show_home_view()
 
-def change_view(e):
-        index = e.control.selected_index if hasattr(e, 'control') else e
+def change_view(index):
+        # Update nav items styling
+        for i, nav_item in enumerate(nav_items):
+            if i == index:
+                nav_item.bgcolor = ft.Colors.BLUE_50
+                nav_item.content.controls[0].color = ft.Colors.BLUE_600
+                nav_item.content.controls[1].color = ft.Colors.BLUE_600
+            else:
+                nav_item.bgcolor = None
+                nav_item.content.controls[0].color = ft.Colors.GREY_600
+                nav_item.content.controls[1].color = ft.Colors.GREY_600
+        
         if token["value"] is None and index != 0:
             content_area.content = ft.Column(
                 [
