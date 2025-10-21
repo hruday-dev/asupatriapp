@@ -4,7 +4,9 @@ import json
 import httpx
 from datetime import datetime
 
-API_BASE = "http://127.0.0.1:2000/api"
+# Update this with your Render URL after deployment
+API_BASE = "https://asupatri-backend.onrender.com/api"
+# For local development, use: API_BASE = "http://127.0.0.1:10000/api"
 
 # Profile view handled locally
 
@@ -51,7 +53,7 @@ def main(page: ft.Page):
                 selected_icon=ft.Icons.PERSON_ROUNDED
             ),
         ],
-        on_change=lambda e: change_view(e.control.selected_index),
+        on_change=change_view,
         height=70,
         bgcolor=ft.Colors.WHITE,
         shadow_color=ft.Colors.BLACK26,
@@ -78,21 +80,37 @@ def main(page: ft.Page):
         on_click=lambda e: perform_search()
     )
 
-    def do_login(e):
+def do_login(e):
         try:
-            r = requests.post(f"{API_BASE}/login", json={"email": email.value, "password": password.value})
+            r = requests.post(f"{API_BASE}/login", json={"email": email.value, "password": password.value}, timeout=10)
             if r.status_code == 200:
                 data = r.json()
                 token["value"] = data["access_token"]
                 user_id["value"] = data["user"]["user_id"]
-                output.value = "Logged in"
+                output.value = "Logged in successfully!"
+                output.color = ft.Colors.GREEN
                 page.update()
                 show_main_app()
             else:
-                output.value = r.json().get("message", "Login failed")
+                error_msg = "Login failed"
+                try:
+                    error_data = r.json()
+                    error_msg = error_data.get("message", error_msg)
+                except:
+                    if r.status_code >= 500:
+                        error_msg = "Server error. Please try again later."
+                    elif r.status_code == 404:
+                        error_msg = "Login endpoint not found. Check API URL."
+                output.value = error_msg
+                output.color = ft.Colors.RED
                 page.update()
+        except requests.exceptions.RequestException as ex:
+            output.value = f"Network error: {str(ex)}"
+            output.color = ft.Colors.RED
+            page.update()
         except Exception as ex:
-            output.value = str(ex)
+            output.value = f"Error: {str(ex)}"
+            output.color = ft.Colors.RED
             page.update()
 
     def show_main_app():
@@ -133,7 +151,8 @@ def main(page: ft.Page):
         )
         show_home_view()
 
-    async def change_view(index):
+def change_view(e):
+        index = e.control.selected_index if hasattr(e, 'control') else e
         if token["value"] is None and index != 0:
             content_area.content = ft.Column(
                 [
@@ -511,36 +530,36 @@ def main(page: ft.Page):
         page.clean()
         show_login_view()
 
-    def get_user_location():
+def get_user_location():
         """Get user's current location using IP-based geolocation"""
         try:
             # Try multiple IP geolocation services for better reliability
             services = [
-                "http://ip-api.com/json/",
                 "https://ipapi.co/json/",
+                "http://ip-api.com/json/",
                 "http://ipinfo.io/json"
             ]
             
             for service in services:
                 try:
                     print(f"Trying location service: {service}")
-                    response = requests.get(service, timeout=10)
+                    response = requests.get(service, timeout=5)
                     if response.status_code == 200:
                         data = response.json()
                         print(f"Location service response: {data}")
                         
                         # Handle different response formats
-                        if service == "http://ip-api.com/json/":
-                            if data.get('status') == 'success':
-                                user_location["lat"] = data.get('lat')
-                                user_location["lon"] = data.get('lon')
-                                print(f"Got location from ip-api: {user_location}")
-                                return True
-                        elif service == "https://ipapi.co/json/":
+                        if service == "https://ipapi.co/json/":
                             if 'latitude' in data and 'longitude' in data:
                                 user_location["lat"] = data.get('latitude')
                                 user_location["lon"] = data.get('longitude')
                                 print(f"Got location from ipapi.co: {user_location}")
+                                return True
+                        elif service == "http://ip-api.com/json/":
+                            if data.get('status') == 'success':
+                                user_location["lat"] = data.get('lat')
+                                user_location["lon"] = data.get('lon')
+                                print(f"Got location from ip-api: {user_location}")
                                 return True
                         elif service == "http://ipinfo.io/json":
                             if 'loc' in data:
@@ -549,11 +568,14 @@ def main(page: ft.Page):
                                 user_location["lon"] = float(lon)
                                 print(f"Got location from ipinfo: {user_location}")
                                 return True
+                except requests.exceptions.RequestException as e:
+                    print(f"Network error with {service}: {e}")
+                    continue
                 except Exception as e:
                     print(f"Error with {service}: {e}")
                     continue
             
-            # Fallback to demo coordinates
+            # Fallback to demo coordinates (Pune, India)
             print("All location services failed, using demo coordinates")
             user_location["lat"] = 18.5204
             user_location["lon"] = 73.8567
@@ -566,111 +588,53 @@ def main(page: ft.Page):
             user_location["lon"] = 73.8567
             return False
 
-    def scrape_nearby_hospitals(lat, lon):
-        """Scrape nearby hospitals from web sources"""
+def scrape_nearby_hospitals(lat, lon):
+        """Get nearby hospitals from database first, then fallback to web sources"""
         hospitals = []
         
-        print(f"Scraping hospitals for location: {lat}, {lon}")
+        print(f"Getting hospitals for location: {lat}, {lon}")
         
+        # First try our database - this is the most reliable source
         try:
-            # Use Overpass API (OpenStreetMap) - free and no API keys required
-            overpass_url = "http://overpass-api.de/api/interpreter"
-            overpass_query = f"""
-            [out:json][timeout:30];
-            (
-              node["amenity"="hospital"](around:25000,{lat},{lon});
-              way["amenity"="hospital"](around:25000,{lat},{lon});
-              relation["amenity"="hospital"](around:25000,{lat},{lon});
-              node["amenity"="clinic"](around:25000,{lat},{lon});
-              way["amenity"="clinic"](around:25000,{lat},{lon});
-              relation["amenity"="clinic"](around:25000,{lat},{lon});
-              node["amenity"="doctors"](around:25000,{lat},{lon});
-              way["amenity"="doctors"](around:25000,{lat},{lon});
-              relation["amenity"="doctors"](around:25000,{lat},{lon});
-              node["healthcare"="hospital"](around:25000,{lat},{lon});
-              way["healthcare"="hospital"](around:25000,{lat},{lon});
-              relation["healthcare"="hospital"](around:25000,{lat},{lon});
-              node["healthcare"="clinic"](around:25000,{lat},{lon});
-              way["healthcare"="clinic"](around:25000,{lat},{lon});
-              relation["healthcare"="clinic"](around:25000,{lat},{lon});
-            );
-            out center;
-            """
-            
-            print(f"Making request to Overpass API...")
-            response = requests.get(overpass_url, params={'data': overpass_query}, timeout=15)
-            print(f"Overpass API response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                elements = data.get('elements', [])
-                print(f"Found {len(elements)} hospital elements from Overpass API")
-                
-                for element in elements:
-                    tags = element.get('tags', {})
-                    name = tags.get('name', 'Unknown Hospital')
-                    
-                    # Skip if no name
-                    if name == 'Unknown Hospital':
-                        continue
-                    
-                    # Get address from various possible fields
-                    addr = (tags.get('addr:full') or 
-                           tags.get('addr:street') or 
-                           tags.get('addr:housename') or 
-                           'Address not available')
-                    
-                    phone = tags.get('phone', 'Phone not available')
-                    
-                    # Get coordinates
-                    hosp_lat = None
-                    hosp_lon = None
-                    
-                    if 'lat' in element and 'lon' in element:
-                        hosp_lat = element['lat']
-                        hosp_lon = element['lon']
-                    elif 'center' in element:
-                        hosp_lat = element['center']['lat']
-                        hosp_lon = element['center']['lon']
-                    
-                    if hosp_lat is None or hosp_lon is None:
-                        continue
-                    
-                    # Calculate distance
-                    distance = calculate_distance(lat, lon, hosp_lat, hosp_lon)
-                    
-                    hospitals.append({
-                        'name': name,
-                        'address': addr,
-                        'phone': phone,
-                        'distance_km': round(distance, 2),
-                        'latitude': hosp_lat,
-                        'longitude': hosp_lon,
-                        'fee_details': 'Contact hospital for pricing'
-                    })
-                
-                print(f"Processed {len(hospitals)} hospitals from Overpass API")
-                
-                # Sort by distance
-                hospitals.sort(key=lambda x: x['distance_km'])
-                return hospitals[:10]  # Return top 10 nearest
-            
-        except Exception as ex:
-            print(f"Overpass API scraping error: {ex}")
-        
-        # Fallback to our database hospitals
-        print("Falling back to database hospitals...")
-        try:
-            r = requests.get(f"{API_BASE}/hospitals/nearby", params={"lat": lat, "lon": lon}, timeout=5)
+            print("Trying database hospitals first...")
+            r = requests.get(f"{API_BASE}/hospitals/nearby", params={"lat": lat, "lon": lon}, timeout=8)
             print(f"Database API response status: {r.status_code}")
             if r.status_code == 200:
                 db_hospitals = r.json().get("hospitals", [])
-                print(f"Found {len(db_hospitals)} hospitals from database")
-                return db_hospitals
+                if db_hospitals:
+                    print(f"Found {len(db_hospitals)} hospitals from database")
+                    # Add distance calculation if not already present
+                    for h in db_hospitals:
+                        if 'distance_km' not in h and h.get('latitude') and h.get('longitude'):
+                            distance = calculate_distance(lat, lon, h.get('latitude'), h.get('longitude'))
+                            h['distance_km'] = round(distance, 2)
+                    return db_hospitals
         except Exception as ex:
             print(f"Database API error: {ex}")
         
-        # Final fallback - create some sample hospitals
+        # If database fails, try all hospitals from database
+        try:
+            print("Trying all hospitals from database...")
+            r = requests.get(f"{API_BASE}/hospitals", timeout=5)
+            if r.status_code == 200:
+                all_hospitals = r.json().get("hospitals", [])
+                print(f"Found {len(all_hospitals)} total hospitals from database")
+                
+                for h in all_hospitals:
+                    if h.get('latitude') and h.get('longitude'):
+                        distance = calculate_distance(lat, lon, h.get('latitude'), h.get('longitude'))
+                        if distance <= 50:  # Only include hospitals within 50km
+                            h['distance_km'] = round(distance, 2)
+                            hospitals.append(h)
+                
+                if hospitals:
+                    hospitals.sort(key=lambda x: x['distance_km'])
+                    print(f"Processed {len(hospitals)} nearby hospitals from database")
+                    return hospitals[:15]  # Return top 15 nearest
+        except Exception as ex:
+            print(f"Error getting all hospitals: {ex}")
+        
+        # Final fallback - use sample hospitals
         print("Using sample hospitals as final fallback...")
         sample_hospitals = [
             {
@@ -678,6 +642,8 @@ def main(page: ft.Page):
                 'address': '123 Main Street, Downtown',
                 'phone': '+1-555-0101',
                 'distance_km': 0.5,
+                'latitude': 18.5204,
+                'longitude': 73.8567,
                 'fee_details': 'Consultation: $50, Emergency: $100'
             },
             {
@@ -685,6 +651,8 @@ def main(page: ft.Page):
                 'address': '456 Health Avenue, Midtown',
                 'phone': '+1-555-0102',
                 'distance_km': 1.2,
+                'latitude': 18.5304,
+                'longitude': 73.8667,
                 'fee_details': 'Consultation: $60, Emergency: $120'
             },
             {
@@ -692,7 +660,27 @@ def main(page: ft.Page):
                 'address': '789 Wellness Blvd, Uptown',
                 'phone': '+1-555-0103',
                 'distance_km': 2.1,
+                'latitude': 18.5404,
+                'longitude': 73.8767,
                 'fee_details': 'Consultation: $45, Emergency: $90'
+            },
+            {
+                'name': 'Green Valley Medical',
+                'address': '321 Care Street, Suburb',
+                'phone': '+1-555-0104',
+                'distance_km': 3.5,
+                'latitude': 18.5104,
+                'longitude': 73.8467,
+                'fee_details': 'Consultation: $40, Emergency: $80'
+            },
+            {
+                'name': 'Royal Healthcare',
+                'address': '654 Premium Road, Elite District',
+                'phone': '+1-555-0105',
+                'distance_km': 5.0,
+                'latitude': 18.5504,
+                'longitude': 73.8867,
+                'fee_details': 'Consultation: $80, Emergency: $150'
             }
         ]
         return sample_hospitals
@@ -1019,39 +1007,52 @@ def main(page: ft.Page):
         else:
             load_nearby()
 
-    def load_appointments():
+def load_appointments():
         appt_list.controls.clear()
-        headers = {"Authorization": f"Bearer {token['value']}"}
-        # Add today=true parameter to get only today's appointments
-        r = requests.get(f"{API_BASE}/appointments/{user_id['value']}?today=true", headers=headers)
-        if r.status_code == 200:
-            appointments = r.json().get("appointments", [])
-            if appointments:
-                for a in appointments:
-                    if a['status'] != 'Completed':
+        
+        if not token["value"] or not user_id["value"]:
+            appt_list.controls.append(
+                ft.Container(
+                    content=ft.Column([
+                        ft.Icon(ft.Icons.LOGIN_REQUIRED, size=48, color=ft.Colors.ORANGE_400),
+                        ft.Container(height=16),
+                        ft.Text("Please login to view appointments", size=16, color=ft.Colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
+                    padding=ft.padding.all(40),
+                    alignment=ft.alignment.center,
+                )
+            )
+            page.update()
+            return
+        
+        try:
+            headers = {"Authorization": f"Bearer {token['value']}"}
+            # Add today=true parameter to get only today's appointments
+            r = requests.get(f"{API_BASE}/appointments/{user_id['value']}?today=true", headers=headers, timeout=10)
+            
+            if r.status_code == 200:
+                appointments = r.json().get("appointments", [])
+                # Filter out completed appointments
+                active_appointments = [a for a in appointments if a.get('status') != 'Completed']
+                
+                if active_appointments:
+                    for a in active_appointments:
                         # Status color mapping
                         status_color = {
                             'Scheduled': ft.Colors.BLUE_600,
                             'Confirmed': ft.Colors.GREEN_600,
                             'Pending': ft.Colors.ORANGE_600,
                             'Cancelled': ft.Colors.RED_600,
-                        }.get(a['status'], ft.Colors.GREY_600)
-
-                        status_bg = {
-                            'Scheduled': ft.Colors.BLUE_50,
-                            'Confirmed': ft.Colors.GREEN_50,
-                            'Pending': ft.Colors.ORANGE_50,
-                            'Cancelled': ft.Colors.RED_50,
-                        }.get(a['status'], ft.Colors.GREY_50)
+                        }.get(a.get('status'), ft.Colors.GREY_600)
 
                         appt_list.controls.append(
                             ft.Container(
                                 content=ft.Column([
                                     ft.Row([
                                         ft.Icon(ft.Icons.EVENT, size=24, color=status_color),
-                                        ft.Text(f"{a['date']} at {a['time']}", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900, expand=True),
+                                        ft.Text(f"{a.get('date', 'Unknown date')} at {a.get('time', 'Unknown time')}", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900, expand=True),
                                         ft.Container(
-                                            content=ft.Text(a['status'], size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                                            content=ft.Text(a.get('status', 'Unknown'), size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
                                             bgcolor=status_color,
                                             border_radius=ft.border_radius.all(12),
                                             padding=ft.padding.symmetric(horizontal=12, vertical=4),
@@ -1059,8 +1060,8 @@ def main(page: ft.Page):
                                     ], alignment=ft.MainAxisAlignment.START, spacing=10),
                                     ft.Container(height=8),
                                     ft.Row([
-                                        ft.Icon(ft.Icons.PERSON, size=16, color=ft.Colors.GREY_600),
-                                        ft.Text(f"Patient: {a.get('patient_name', 'Unknown')}", size=14, color=ft.Colors.GREY_700),
+                                        ft.Icon(ft.Icons.LOCAL_HOSPITAL, size=16, color=ft.Colors.GREY_600),
+                                        ft.Text(f"Hospital: {a.get('hospital_name', 'Not specified')}", size=14, color=ft.Colors.GREY_700),
                                     ], spacing=5),
                                     ft.Container(height=4),
                                     ft.Row([
@@ -1080,28 +1081,72 @@ def main(page: ft.Page):
                                 margin=ft.margin.symmetric(vertical=6),
                             )
                         )
+                else:
+                    # Empty state
+                    appt_list.controls.append(
+                        ft.Container(
+                            content=ft.Column([
+                                ft.Icon(ft.Icons.EVENT_BUSY, size=64, color=ft.Colors.GREY_400),
+                                ft.Container(height=16),
+                                ft.Text("No appointments scheduled for today", size=18, color=ft.Colors.GREY_600, text_align=ft.TextAlign.CENTER),
+                                ft.Container(height=8),
+                                ft.Text("Your upcoming appointments will appear here", size=14, color=ft.Colors.GREY_500, text_align=ft.TextAlign.CENTER),
+                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
+                            padding=ft.padding.all(40),
+                            alignment=ft.alignment.center,
+                        )
+                    )
             else:
-                # Empty state
+                error_msg = "Failed to load appointments"
+                if r.status_code == 401:
+                    error_msg = "Session expired. Please login again."
+                elif r.status_code == 404:
+                    error_msg = "Appointments endpoint not found."
+                elif r.status_code >= 500:
+                    error_msg = "Server error. Please try again later."
+                
                 appt_list.controls.append(
                     ft.Container(
                         content=ft.Column([
-                            ft.Icon(ft.Icons.EVENT_BUSY, size=64, color=ft.Colors.GREY_400),
+                            ft.Icon(ft.Icons.ERROR, size=48, color=ft.Colors.RED_400),
                             ft.Container(height=16),
-                            ft.Text("No appointments scheduled for today", size=18, color=ft.Colors.GREY_600, text_align=ft.TextAlign.CENTER),
+                            ft.Text(error_msg, size=16, color=ft.Colors.RED_600, text_align=ft.TextAlign.CENTER),
                             ft.Container(height=8),
-                            ft.Text("Your upcoming appointments will appear here", size=14, color=ft.Colors.GREY_500, text_align=ft.TextAlign.CENTER),
+                            ft.ElevatedButton(
+                                "Retry",
+                                on_click=lambda e: load_appointments(),
+                                style=ft.ButtonStyle(bgcolor=ft.Colors.RED_600, color=ft.Colors.WHITE),
+                            ),
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                         padding=ft.padding.all(40),
                         alignment=ft.alignment.center,
                     )
                 )
-        else:
+        except requests.exceptions.RequestException as ex:
             appt_list.controls.append(
                 ft.Container(
                     content=ft.Column([
-                        ft.Icon(ft.Icons.ERROR, size=48, color=ft.Colors.RED_400),
+                        ft.Icon(ft.Icons.WIFI_OFF, size=48, color=ft.Colors.ORANGE_400),
                         ft.Container(height=16),
-                        ft.Text("Failed to load appointments", size=16, color=ft.Colors.RED_600, text_align=ft.TextAlign.CENTER),
+                        ft.Text("Network error. Please check your connection.", size=16, color=ft.Colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
+                        ft.Container(height=8),
+                        ft.ElevatedButton(
+                            "Retry",
+                            on_click=lambda e: load_appointments(),
+                            style=ft.ButtonStyle(bgcolor=ft.Colors.ORANGE_600, color=ft.Colors.WHITE),
+                        ),
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
+                    padding=ft.padding.all(40),
+                    alignment=ft.alignment.center,
+                )
+            )
+        except Exception as ex:
+            appt_list.controls.append(
+                ft.Container(
+                    content=ft.Column([
+                        ft.Icon(ft.Icons.BUG_REPORT, size=48, color=ft.Colors.RED_400),
+                        ft.Container(height=16),
+                        ft.Text(f"Error: {str(ex)}", size=16, color=ft.Colors.RED_600, text_align=ft.TextAlign.CENTER),
                         ft.Container(height=8),
                         ft.ElevatedButton(
                             "Retry",
@@ -1115,74 +1160,137 @@ def main(page: ft.Page):
             )
         page.update()
 
-    def load_completed_appointments():
+def load_completed_appointments():
         completed_appt_list.controls.clear()
-        headers = {"Authorization": f"Bearer {token['value']}"}
-        # Get all appointments and filter for completed ones
-        r = requests.get(f"{API_BASE}/appointments/{user_id['value']}", headers=headers)
-        if r.status_code == 200:
-            appointments = r.json().get("appointments", [])
-            completed_appts = [a for a in appointments if a['status'] == 'Completed']
-            if completed_appts:
-                for a in completed_appts:
+        
+        if not token["value"] or not user_id["value"]:
+            completed_appt_list.controls.append(
+                ft.Container(
+                    content=ft.Column([
+                        ft.Icon(ft.Icons.LOGIN_REQUIRED, size=48, color=ft.Colors.ORANGE_400),
+                        ft.Container(height=16),
+                        ft.Text("Please login to view appointments", size=16, color=ft.Colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
+                    padding=ft.padding.all(40),
+                    alignment=ft.alignment.center,
+                )
+            )
+            page.update()
+            return
+        
+        try:
+            headers = {"Authorization": f"Bearer {token['value']}"}
+            # Get all appointments and filter for completed ones
+            r = requests.get(f"{API_BASE}/appointments/{user_id['value']}", headers=headers, timeout=10)
+            
+            if r.status_code == 200:
+                appointments = r.json().get("appointments", [])
+                completed_appts = [a for a in appointments if a.get('status') == 'Completed']
+                
+                if completed_appts:
+                    for a in completed_appts:
+                        completed_appt_list.controls.append(
+                            ft.Container(
+                                content=ft.Column([
+                                    ft.Row([
+                                        ft.Icon(ft.Icons.CHECK_CIRCLE, size=24, color=ft.Colors.GREEN_600),
+                                        ft.Text(f"{a.get('date', 'Unknown date')} at {a.get('time', 'Unknown time')}", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_900, expand=True),
+                                        ft.Container(
+                                            content=ft.Text("Completed", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                                            bgcolor=ft.Colors.GREEN_600,
+                                            border_radius=ft.border_radius.all(12),
+                                            padding=ft.padding.symmetric(horizontal=12, vertical=4),
+                                        ),
+                                    ], alignment=ft.MainAxisAlignment.START, spacing=10),
+                                    ft.Container(height=8),
+                                    ft.Row([
+                                        ft.Icon(ft.Icons.LOCAL_HOSPITAL, size=16, color=ft.Colors.GREY_600),
+                                        ft.Text(f"Hospital: {a.get('hospital_name', 'Not specified')}", size=14, color=ft.Colors.GREY_700),
+                                    ], spacing=5),
+                                    ft.Container(height=4),
+                                    ft.Row([
+                                        ft.Icon(ft.Icons.MEDICAL_SERVICES, size=16, color=ft.Colors.GREY_600),
+                                        ft.Text(f"Type: {a.get('appointment_type', 'General')}", size=14, color=ft.Colors.GREY_700),
+                                    ], spacing=5),
+                                ], spacing=0),
+                                padding=ft.padding.all(16),
+                                bgcolor=ft.Colors.WHITE,
+                                border_radius=ft.border_radius.all(12),
+                                shadow=ft.BoxShadow(
+                                    spread_radius=1,
+                                    blur_radius=8,
+                                    color=ft.Colors.BLACK12,
+                                    offset=ft.Offset(0, 2),
+                                ),
+                                margin=ft.margin.symmetric(vertical=6),
+                            )
+                        )
+                else:
+                    # Empty state
                     completed_appt_list.controls.append(
                         ft.Container(
                             content=ft.Column([
-                                ft.Row([
-                                    ft.Icon(ft.Icons.CHECK_CIRCLE, size=24, color=ft.Colors.GREEN_600),
-                                    ft.Text(f"{a['date']} at {a['time']}", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_900, expand=True),
-                                    ft.Container(
-                                        content=ft.Text("Completed", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                                        bgcolor=ft.Colors.GREEN_600,
-                                        border_radius=ft.border_radius.all(12),
-                                        padding=ft.padding.symmetric(horizontal=12, vertical=4),
-                                    ),
-                                ], alignment=ft.MainAxisAlignment.START, spacing=10),
+                                ft.Icon(ft.Icons.CHECK_CIRCLE_OUTLINE, size=64, color=ft.Colors.GREY_400),
+                                ft.Container(height=16),
+                                ft.Text("No completed appointments found", size=18, color=ft.Colors.GREY_600, text_align=ft.TextAlign.CENTER),
                                 ft.Container(height=8),
-                                ft.Row([
-                                    ft.Icon(ft.Icons.PERSON, size=16, color=ft.Colors.GREY_600),
-                                    ft.Text(f"Patient: {a.get('patient_name', 'Unknown')}", size=14, color=ft.Colors.GREY_700),
-                                ], spacing=5),
-                                ft.Container(height=4),
-                                ft.Row([
-                                    ft.Icon(ft.Icons.MEDICAL_SERVICES, size=16, color=ft.Colors.GREY_600),
-                                    ft.Text(f"Type: {a.get('appointment_type', 'General')}", size=14, color=ft.Colors.GREY_700),
-                                ], spacing=5),
-                            ], spacing=0),
-                            padding=ft.padding.all(16),
-                            bgcolor=ft.Colors.WHITE,
-                            border_radius=ft.border_radius.all(12),
-                            shadow=ft.BoxShadow(
-                                spread_radius=1,
-                                blur_radius=8,
-                                color=ft.Colors.BLACK12,
-                                offset=ft.Offset(0, 2),
-                            ),
-                            margin=ft.margin.symmetric(vertical=6),
+                                ft.Text("Your completed appointments will appear here", size=14, color=ft.Colors.GREY_500, text_align=ft.TextAlign.CENTER),
+                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
+                            padding=ft.padding.all(40),
+                            alignment=ft.alignment.center,
                         )
                     )
             else:
-                # Empty state
+                error_msg = "Failed to load completed appointments"
+                if r.status_code == 401:
+                    error_msg = "Session expired. Please login again."
+                elif r.status_code == 404:
+                    error_msg = "Appointments endpoint not found."
+                elif r.status_code >= 500:
+                    error_msg = "Server error. Please try again later."
+                
                 completed_appt_list.controls.append(
                     ft.Container(
                         content=ft.Column([
-                            ft.Icon(ft.Icons.CHECK_CIRCLE_OUTLINE, size=64, color=ft.Colors.GREY_400),
+                            ft.Icon(ft.Icons.ERROR, size=48, color=ft.Colors.RED_400),
                             ft.Container(height=16),
-                            ft.Text("No completed appointments found", size=18, color=ft.Colors.GREY_600, text_align=ft.TextAlign.CENTER),
+                            ft.Text(error_msg, size=16, color=ft.Colors.RED_600, text_align=ft.TextAlign.CENTER),
                             ft.Container(height=8),
-                            ft.Text("Your completed appointments will appear here", size=14, color=ft.Colors.GREY_500, text_align=ft.TextAlign.CENTER),
+                            ft.ElevatedButton(
+                                "Retry",
+                                on_click=lambda e: load_completed_appointments(),
+                                style=ft.ButtonStyle(bgcolor=ft.Colors.RED_600, color=ft.Colors.WHITE),
+                            ),
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
                         padding=ft.padding.all(40),
                         alignment=ft.alignment.center,
                     )
                 )
-        else:
+        except requests.exceptions.RequestException as ex:
             completed_appt_list.controls.append(
                 ft.Container(
                     content=ft.Column([
-                        ft.Icon(ft.Icons.ERROR, size=48, color=ft.Colors.RED_400),
+                        ft.Icon(ft.Icons.WIFI_OFF, size=48, color=ft.Colors.ORANGE_400),
                         ft.Container(height=16),
-                        ft.Text("Failed to load completed appointments", size=16, color=ft.Colors.RED_600, text_align=ft.TextAlign.CENTER),
+                        ft.Text("Network error. Please check your connection.", size=16, color=ft.Colors.ORANGE_600, text_align=ft.TextAlign.CENTER),
+                        ft.Container(height=8),
+                        ft.ElevatedButton(
+                            "Retry",
+                            on_click=lambda e: load_completed_appointments(),
+                            style=ft.ButtonStyle(bgcolor=ft.Colors.ORANGE_600, color=ft.Colors.WHITE),
+                        ),
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0),
+                    padding=ft.padding.all(40),
+                    alignment=ft.alignment.center,
+                )
+            )
+        except Exception as ex:
+            completed_appt_list.controls.append(
+                ft.Container(
+                    content=ft.Column([
+                        ft.Icon(ft.Icons.BUG_REPORT, size=48, color=ft.Colors.RED_400),
+                        ft.Container(height=16),
+                        ft.Text(f"Error: {str(ex)}", size=16, color=ft.Colors.RED_600, text_align=ft.TextAlign.CENTER),
                         ft.Container(height=8),
                         ft.ElevatedButton(
                             "Retry",
@@ -1196,7 +1304,7 @@ def main(page: ft.Page):
             )
         page.update()
 
-    def do_signup(e):
+def do_signup(e):
         try:
             # Validate passwords match
             if signup_password.value != signup_confirm_password.value:
@@ -1217,7 +1325,7 @@ def main(page: ft.Page):
                 "password": signup_password.value,
                 "user_type": "Patient",
                 "full_name": signup_full_name.value
-            })
+            }, timeout=10)
             
             if r.status_code == 201:
                 data = r.json()
@@ -1228,11 +1336,24 @@ def main(page: ft.Page):
                 page.update()
                 show_main_app()
             else:
-                signup_output.value = r.json().get("message", "Registration failed")
+                error_msg = "Registration failed"
+                try:
+                    error_data = r.json()
+                    error_msg = error_data.get("message", error_msg)
+                except:
+                    if r.status_code >= 500:
+                        error_msg = "Server error. Please try again later."
+                    elif r.status_code == 404:
+                        error_msg = "Registration endpoint not found. Check API URL."
+                signup_output.value = error_msg
                 signup_output.color = ft.Colors.RED
                 page.update()
+        except requests.exceptions.RequestException as ex:
+            signup_output.value = f"Network error: {str(ex)}"
+            signup_output.color = ft.Colors.RED
+            page.update()
         except Exception as ex:
-            signup_output.value = str(ex)
+            signup_output.value = f"Error: {str(ex)}"
             signup_output.color = ft.Colors.RED
             page.update()
 
