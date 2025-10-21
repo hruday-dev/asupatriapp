@@ -1,14 +1,11 @@
 import flet as ft
 import requests
 import json
-import httpx
 from datetime import datetime
 
 # Update this with your Render URL after deployment
 API_BASE = "https://asupatri-backend.onrender.com/api"
 # For local development, use: API_BASE = "http://127.0.0.1:10000/api"
-
-# Profile view handled locally
 
 def main(page: ft.Page):
     page.title = "Patient App"
@@ -29,37 +26,6 @@ def main(page: ft.Page):
     signup_full_name = ft.TextField(label="Full Name")
     signup_output = ft.Text()
     
-# Navigation components with modern styling (compatible with older Flet versions)
-    nav_items = []
-    
-    def create_nav_item(icon, label, index):
-        return ft.Container(
-            content=ft.Column([
-                ft.Icon(icon, size=24, color=ft.Colors.BLUE_600 if index == 0 else ft.Colors.GREY_600),
-                ft.Text(label, size=12, color=ft.Colors.BLUE_600 if index == 0 else ft.Colors.GREY_600),
-            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2),
-            padding=ft.padding.symmetric(horizontal=16, vertical=8),
-            bgcolor=ft.Colors.BLUE_50 if index == 0 else None,
-            border_radius=ft.border_radius.all(8),
-            ink=True,
-            on_click=lambda _: change_view(index),
-        )
-    
-    nav_items = [
-        create_nav_item(ft.Icons.HOME_ROUNDED, "Home", 0),
-        create_nav_item(ft.Icons.CALENDAR_TODAY_ROUNDED, "Appointments", 1),
-        create_nav_item(ft.Icons.CHECK_CIRCLE_ROUNDED, "Completed", 2),
-        create_nav_item(ft.Icons.PERSON_ROUNDED, "Profile", 3),
-    ]
-    
-    nav_bar = ft.Container(
-        content=ft.Row(nav_items, alignment=ft.MainAxisAlignment.SPACE_EVENLY),
-        padding=ft.padding.all(10),
-        bgcolor=ft.Colors.WHITE,
-        shadow_color=ft.Colors.BLACK26,
-        elevation=8,
-    )
-    
     # Content areas
     content_area = ft.Container()
     hospitals_list = ft.ListView(expand=1, spacing=10, padding=10)
@@ -78,7 +44,7 @@ def main(page: ft.Page):
         on_click=lambda e: perform_search()
     )
 
-def do_login(e):
+    def do_login(e):
         try:
             r = requests.post(f"{API_BASE}/login", json={"email": email.value, "password": password.value}, timeout=10)
             if r.status_code == 200:
@@ -113,6 +79,38 @@ def do_login(e):
 
     def show_main_app():
         page.clean()
+        
+        # Navigation components with modern styling (compatible with older Flet versions)
+        nav_items = []
+        
+        def create_nav_item(icon, label, index):
+            return ft.Container(
+                content=ft.Column([
+                    ft.Icon(icon, size=24, color=ft.Colors.BLUE_600 if index == 0 else ft.Colors.GREY_600),
+                    ft.Text(label, size=12, color=ft.Colors.BLUE_600 if index == 0 else ft.Colors.GREY_600),
+                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2),
+                padding=ft.padding.symmetric(horizontal=16, vertical=8),
+                bgcolor=ft.Colors.BLUE_50 if index == 0 else None,
+                border_radius=ft.border_radius.all(8),
+                ink=True,
+                on_click=lambda _: change_view(index),
+            )
+        
+        nav_items = [
+            create_nav_item(ft.Icons.HOME_ROUNDED, "Home", 0),
+            create_nav_item(ft.Icons.CALENDAR_TODAY_ROUNDED, "Appointments", 1),
+            create_nav_item(ft.Icons.CHECK_CIRCLE_ROUNDED, "Completed", 2),
+            create_nav_item(ft.Icons.PERSON_ROUNDED, "Profile", 3),
+        ]
+        
+        nav_bar = ft.Container(
+            content=ft.Row(nav_items, alignment=ft.MainAxisAlignment.SPACE_EVENLY),
+            padding=ft.padding.all(10),
+            bgcolor=ft.Colors.WHITE,
+            shadow_color=ft.Colors.BLACK26,
+            elevation=8,
+        )
+        
         page.add(
             ft.Container(
                 content=ft.Column([
@@ -149,7 +147,7 @@ def do_login(e):
         )
         show_home_view()
 
-def change_view(index):
+    def change_view(index):
         # Update nav items styling
         for i, nav_item in enumerate(nav_items):
             if i == index:
@@ -181,8 +179,6 @@ def change_view(index):
         elif index == 3:
             show_profile_view()
 
-
-
     def show_home_view():
         current_view["value"] = "home"
 
@@ -206,64 +202,6 @@ def change_view(index):
             ),
             margin=ft.margin.only(bottom=20),
         )
-
-        # Stats cards
-        stats_row = ft.Row([
-            ft.Container(
-                content=ft.Column([
-                    ft.Icon(ft.Icons.CALENDAR_TODAY, size=28, color=ft.Colors.BLUE_600),
-                    ft.Text("Today's Appointments", size=12, color=ft.Colors.GREY_600),
-                    ft.Text("Loading...", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900),
-                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=5),
-                width=100,
-                height=80,
-                padding=ft.padding.all(12),
-                bgcolor=ft.Colors.WHITE,
-                border_radius=12,
-                shadow=ft.BoxShadow(
-                    spread_radius=1,
-                    blur_radius=8,
-                    color=ft.Colors.BLACK12,
-                    offset=ft.Offset(0, 2),
-                ),
-            ),
-            ft.Container(
-                content=ft.Column([
-                    ft.Icon(ft.Icons.CHECK_CIRCLE, size=28, color=ft.Colors.GREEN_600),
-                    ft.Text("Completed", size=12, color=ft.Colors.GREY_600),
-                    ft.Text("Loading...", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_900),
-                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=5),
-                width=100,
-                height=80,
-                padding=ft.padding.all(12),
-                bgcolor=ft.Colors.WHITE,
-                border_radius=12,
-                shadow=ft.BoxShadow(
-                    spread_radius=1,
-                    blur_radius=8,
-                    color=ft.Colors.BLACK12,
-                    offset=ft.Offset(0, 2),
-                ),
-            ),
-            ft.Container(
-                content=ft.Column([
-                    ft.Icon(ft.Icons.LOCAL_HOSPITAL, size=28, color=ft.Colors.PURPLE_600),
-                    ft.Text("Nearby Hospitals", size=12, color=ft.Colors.GREY_600),
-                    ft.Text("Loading...", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_900),
-                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=5),
-                width=100,
-                height=80,
-                padding=ft.padding.all(12),
-                bgcolor=ft.Colors.WHITE,
-                border_radius=12,
-                shadow=ft.BoxShadow(
-                    spread_radius=1,
-                    blur_radius=8,
-                    color=ft.Colors.BLACK12,
-                    offset=ft.Offset(0, 2),
-                ),
-            ),
-        ], alignment=ft.MainAxisAlignment.SPACE_EVENLY)
 
         # Search section with modern styling
         search_section = ft.Container(
@@ -318,7 +256,6 @@ def change_view(index):
 
         content_area.content = ft.Column([
             welcome_card,
-            stats_row,
             search_section,
             hospitals_list,
         ], expand=True, scroll=ft.ScrollMode.AUTO, spacing=0)
@@ -477,39 +414,6 @@ def change_view(index):
                                 ft.Text(f"📧 Email: {profile.get('email', 'Not provided')}", size=14),
                                 ft.Text(f"🆔 User ID: {profile.get('user_id', 'Not provided')}", size=14),
                                 ft.Text(f"👥 Type: {profile.get('user_type', 'Not provided')}", size=14),
-                                ft.Text(f"📅 Member Since: User #{profile.get('created_at', 'Unknown')}", size=14),
-                            ], spacing=5),
-                            padding=15
-                        ),
-                        margin=ft.margin.symmetric(vertical=5)
-                    ),
-                    ft.Card(
-                        content=ft.Container(
-                            content=ft.Column([
-                                ft.Row([
-                                    ft.Icon(ft.Icons.SECURITY, color=ft.Colors.GREEN),
-                                    ft.Text("Account Security", size=16, weight=ft.FontWeight.BOLD),
-                                ]),
-                                ft.Divider(),
-                                ft.Text("🔐 Password: ••••••••", size=14),
-                                ft.Text("✅ Account Status: Active", size=14, color=ft.Colors.GREEN),
-                                ft.Text("🔑 Authentication: JWT Token", size=14),
-                            ], spacing=5),
-                            padding=15
-                        ),
-                        margin=ft.margin.symmetric(vertical=5)
-                    ),
-                    ft.Card(
-                        content=ft.Container(
-                            content=ft.Column([
-                                ft.Row([
-                                    ft.Icon(ft.Icons.INFO, color=ft.Colors.ORANGE),
-                                    ft.Text("App Information", size=16, weight=ft.FontWeight.BOLD),
-                                ]),
-                                ft.Divider(),
-                                ft.Text("📱 App Version: 1.0.0", size=14),
-                                ft.Text("🏥 Healthcare Provider: Asupatri", size=14),
-                                ft.Text("🌐 Service: Patient Portal", size=14),
                             ], spacing=5),
                             padding=15
                         ),
@@ -538,7 +442,7 @@ def change_view(index):
         page.clean()
         show_login_view()
 
-def get_user_location():
+    def get_user_location():
         """Get user's current location using IP-based geolocation"""
         try:
             # Try multiple IP geolocation services for better reliability
@@ -596,182 +500,6 @@ def get_user_location():
             user_location["lon"] = 73.8567
             return False
 
-def scrape_nearby_hospitals(lat, lon):
-        """Get nearby hospitals from database first, then fallback to web sources"""
-        hospitals = []
-        
-        print(f"Getting hospitals for location: {lat}, {lon}")
-        
-        # First try our database - this is the most reliable source
-        try:
-            print("Trying database hospitals first...")
-            r = requests.get(f"{API_BASE}/hospitals/nearby", params={"lat": lat, "lon": lon}, timeout=8)
-            print(f"Database API response status: {r.status_code}")
-            if r.status_code == 200:
-                db_hospitals = r.json().get("hospitals", [])
-                if db_hospitals:
-                    print(f"Found {len(db_hospitals)} hospitals from database")
-                    # Add distance calculation if not already present
-                    for h in db_hospitals:
-                        if 'distance_km' not in h and h.get('latitude') and h.get('longitude'):
-                            distance = calculate_distance(lat, lon, h.get('latitude'), h.get('longitude'))
-                            h['distance_km'] = round(distance, 2)
-                    return db_hospitals
-        except Exception as ex:
-            print(f"Database API error: {ex}")
-        
-        # If database fails, try all hospitals from database
-        try:
-            print("Trying all hospitals from database...")
-            r = requests.get(f"{API_BASE}/hospitals", timeout=5)
-            if r.status_code == 200:
-                all_hospitals = r.json().get("hospitals", [])
-                print(f"Found {len(all_hospitals)} total hospitals from database")
-                
-                for h in all_hospitals:
-                    if h.get('latitude') and h.get('longitude'):
-                        distance = calculate_distance(lat, lon, h.get('latitude'), h.get('longitude'))
-                        if distance <= 50:  # Only include hospitals within 50km
-                            h['distance_km'] = round(distance, 2)
-                            hospitals.append(h)
-                
-                if hospitals:
-                    hospitals.sort(key=lambda x: x['distance_km'])
-                    print(f"Processed {len(hospitals)} nearby hospitals from database")
-                    return hospitals[:15]  # Return top 15 nearest
-        except Exception as ex:
-            print(f"Error getting all hospitals: {ex}")
-        
-        # Final fallback - use sample hospitals
-        print("Using sample hospitals as final fallback...")
-        sample_hospitals = [
-            {
-                'name': 'City General Hospital',
-                'address': '123 Main Street, Downtown',
-                'phone': '+1-555-0101',
-                'distance_km': 0.5,
-                'latitude': 18.5204,
-                'longitude': 73.8567,
-                'fee_details': 'Consultation: $50, Emergency: $100'
-            },
-            {
-                'name': 'Metro Medical Center',
-                'address': '456 Health Avenue, Midtown',
-                'phone': '+1-555-0102',
-                'distance_km': 1.2,
-                'latitude': 18.5304,
-                'longitude': 73.8667,
-                'fee_details': 'Consultation: $60, Emergency: $120'
-            },
-            {
-                'name': 'Sunrise Hospital',
-                'address': '789 Wellness Blvd, Uptown',
-                'phone': '+1-555-0103',
-                'distance_km': 2.1,
-                'latitude': 18.5404,
-                'longitude': 73.8767,
-                'fee_details': 'Consultation: $45, Emergency: $90'
-            },
-            {
-                'name': 'Green Valley Medical',
-                'address': '321 Care Street, Suburb',
-                'phone': '+1-555-0104',
-                'distance_km': 3.5,
-                'latitude': 18.5104,
-                'longitude': 73.8467,
-                'fee_details': 'Consultation: $40, Emergency: $80'
-            },
-            {
-                'name': 'Royal Healthcare',
-                'address': '654 Premium Road, Elite District',
-                'phone': '+1-555-0105',
-                'distance_km': 5.0,
-                'latitude': 18.5504,
-                'longitude': 73.8867,
-                'fee_details': 'Consultation: $80, Emergency: $150'
-            }
-        ]
-        return sample_hospitals
-
-    def search_hospitals_and_treatments(query, user_lat, user_lon):
-        """Search hospitals by name/address and doctors by specialization"""
-        results = []
-        query_lower = query.lower()
-        db_hospitals = []
-
-        try:
-            # Search hospitals from database
-            r = requests.get(f"{API_BASE}/hospitals", timeout=5)
-            if r.status_code == 200:
-                db_hospitals = r.json().get("hospitals", [])
-                for h in db_hospitals:
-                    # Check if query matches hospital name or address
-                    if (query_lower in h['name'].lower() or
-                        query_lower in h['address'].lower()):
-                        distance = calculate_distance(user_lat, user_lon, h.get('latitude'), h.get('longitude'))
-                        results.append({
-                            'name': h['name'],
-                            'address': h['address'],
-                            'phone': h.get('phone', 'Phone not available'),
-                            'distance_km': round(distance, 2) if distance != float("inf") else None,
-                            'latitude': h.get('latitude'),
-                            'longitude': h.get('longitude'),
-                            'fee_details': h.get('fee_details', 'Contact hospital for pricing'),
-                            'match_type': 'hospital'
-                        })
-
-            # Search doctors by specialization
-            # First get all doctors, then filter by specialization
-            try:
-                # We need to get doctors - let's try to get them via hospitals
-                doctor_hospitals = []
-                for h in db_hospitals:
-                    try:
-                        r = requests.get(f"{API_BASE}/doctors/hospital/{h['hospital_id']}", timeout=3)
-                        if r.status_code == 200:
-                            doctors = r.json().get("doctors", [])
-                            for d in doctors:
-                                if query_lower in d['specialization'].lower():
-                                    # Add this hospital if doctor specialization matches
-                                    distance = calculate_distance(user_lat, user_lon, h.get('latitude'), h.get('longitude'))
-                                    doctor_hospitals.append({
-                                        'name': h['name'],
-                                        'address': h['address'],
-                                        'phone': h.get('phone', 'Phone not available'),
-                                        'distance_km': round(distance, 2) if distance != float("inf") else None,
-                                        'latitude': h.get('latitude'),
-                                        'longitude': h.get('longitude'),
-                                        'fee_details': h.get('fee_details', f"Specialization: {d['specialization']}"),
-                                        'match_type': 'treatment',
-                                        'doctor_name': d.get('user', {}).get('full_name', 'Doctor'),
-                                        'specialization': d['specialization']
-                                    })
-                    except Exception as e:
-                        print(f"Error getting doctors for hospital {h['hospital_id']}: {e}")
-                        continue
-
-                results.extend(doctor_hospitals)
-
-            except Exception as e:
-                print(f"Error searching doctors: {e}")
-
-        except Exception as ex:
-            print(f"Database search error: {ex}")
-
-        # Remove duplicates based on hospital name
-        seen = set()
-        unique_results = []
-        for r in results:
-            key = r['name'].lower()
-            if key not in seen:
-                seen.add(key)
-                unique_results.append(r)
-
-        # Sort by distance
-        unique_results.sort(key=lambda x: x.get('distance_km', float('inf')))
-
-        return unique_results[:20]  # Return top 20 results
-
     def calculate_distance(lat1, lon1, lat2, lon2):
         """Calculate distance between two points using Haversine formula"""
         from math import radians, cos, sin, asin, sqrt
@@ -815,109 +543,7 @@ def scrape_nearby_hospitals(lat, lon):
                     hospitals_list.controls.append(ft.Text("🔍 Searching for nearby hospitals...", color=ft.Colors.BLUE))
                 page.update()
                 
-                print(f"Starting hospital search for coordinates: {lat}, {lon}")
-                if search_query:
-                    # Search mode: search hospitals and treatments
-                    hospitals = search_hospitals_and_treatments(search_query, lat, lon)
-                else:
-                    # Normal mode: scrape nearby hospitals
-                    hospitals = scrape_nearby_hospitals(lat, lon)
-                print(f"Hospital search completed. Found {len(hospitals)} hospitals")
-                
-                hospitals_list.controls.clear()
-                
-                if hospitals:
-                    if search_query:
-                        hospitals_list.controls.append(ft.Text(f"🔍 Found {len(hospitals)} results for '{search_query}':", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN))
-                        hospitals_list.controls.append(ft.Text(f"📍 Results sorted by distance from your location", size=12, color=ft.Colors.BLUE))
-                    else:
-                        hospitals_list.controls.append(ft.Text(f"🏥 Found {len(hospitals)} nearby hospitals:", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN))
-                        hospitals_list.controls.append(ft.Text(f"📍 Based on your location: {lat:.4f}, {lon:.4f}", size=12, color=ft.Colors.BLUE))
-                    
-                    for i, h in enumerate(hospitals, 1):
-                         distance = h.get('distance_km', '?')
-                         phone = h.get('phone', 'N/A')
-                         hospitals_list.controls.append(
-                             ft.Container(
-                                 content=ft.Column([
-                                     ft.Row([
-                                         ft.Container(
-                                             content=ft.Text(f"#{i}", size=12, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
-                                             bgcolor=ft.Colors.BLUE_600,
-                                             border_radius=ft.border_radius.all(8),
-                                             padding=ft.padding.symmetric(horizontal=8, vertical=2),
-                                             alignment=ft.alignment.center,
-                                         ),
-                                         ft.Container(width=10),
-                                         ft.Text(h['name'], size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900, expand=True),
-                                         ft.Icon(ft.Icons.LOCAL_HOSPITAL, size=24, color=ft.Colors.BLUE_600),
-                                     ], alignment=ft.MainAxisAlignment.START),
-                                     ft.Container(height=8),
-                                     ft.Row([
-                                         ft.Icon(ft.Icons.LOCATION_ON, size=16, color=ft.Colors.GREY_600),
-                                         ft.Text(h['address'], size=14, color=ft.Colors.GREY_700, expand=True),
-                                     ], spacing=5),
-                                     ft.Container(height=4),
-                                     ft.Row([
-                                         ft.Icon(ft.Icons.PHONE, size=16, color=ft.Colors.GREY_600),
-                                         ft.Text(phone, size=14, color=ft.Colors.GREY_700),
-                                     ], spacing=5),
-                                     ft.Container(height=4),
-                                     ft.Row([
-                                         ft.Icon(ft.Icons.ATTACH_MONEY, size=16, color=ft.Colors.GREY_600),
-                                         ft.Text(h.get('fee_details', 'Contact for pricing'), size=14, color=ft.Colors.GREY_700),
-                                     ], spacing=5),
-                                     ft.Container(height=8),
-                                     ft.Row([
-                                         ft.Container(
-                                             content=ft.Row([
-                                                 ft.Icon(ft.Icons.DIRECTIONS, size=14, color=ft.Colors.BLUE_600),
-                                                 ft.Text(f"{distance} km away", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_600),
-                                             ], spacing=4),
-                                             bgcolor=ft.Colors.BLUE_50,
-                                             border_radius=ft.border_radius.all(6),
-                                             padding=ft.padding.symmetric(horizontal=8, vertical=4),
-                                         ),
-                                         # Show specialization info for treatment matches
-                                         ft.Container(
-                                             content=ft.Row([
-                                                 ft.Icon(ft.Icons.MEDICAL_SERVICES, size=14, color=ft.Colors.GREEN_600),
-                                                 ft.Text(h.get('specialization', ''), size=14, color=ft.Colors.GREEN_700),
-                                             ], spacing=4),
-                                             bgcolor=ft.Colors.GREEN_50,
-                                             border_radius=ft.border_radius.all(6),
-                                             padding=ft.padding.symmetric(horizontal=8, vertical=4),
-                                         ) if h.get('match_type') == 'treatment' and h.get('specialization') else ft.Container(),
-                                     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                                 ], spacing=0),
-                                 padding=ft.padding.all(16),
-                                 bgcolor=ft.Colors.WHITE,
-                                 border_radius=ft.border_radius.all(12),
-                                 shadow=ft.BoxShadow(
-                                     spread_radius=1,
-                                     blur_radius=8,
-                                     color=ft.Colors.BLACK12,
-                                     offset=ft.Offset(0, 2),
-                                 ),
-                                 margin=ft.margin.symmetric(vertical=6),
-                             )
-                         )
-                else:
-                    if search_query:
-                        hospitals_list.controls.append(ft.Text(f"❌ No results found for '{search_query}'", color=ft.Colors.ORANGE, size=16))
-                        hospitals_list.controls.append(ft.Text("💡 Try different keywords or check spelling", size=12))
-                    else:
-                        hospitals_list.controls.append(ft.Text("❌ No hospitals found nearby", color=ft.Colors.ORANGE, size=16))
-                    hospitals_list.controls.append(ft.Text("💡 This might be due to:", size=12))
-                    hospitals_list.controls.append(ft.Text("• Limited hospital data in your area", size=12))
-                    hospitals_list.controls.append(ft.Text("• Internet connection issues", size=12))
-                    hospitals_list.controls.append(ft.Text("• Location services not available", size=12))
-            else:
-                hospitals_list.controls.clear()
-                hospitals_list.controls.append(ft.Text("❌ Could not get your location", color=ft.Colors.RED, size=16))
-                hospitals_list.controls.append(ft.Text("📍 Using sample hospitals instead...", color=ft.Colors.ORANGE))
-                
-                # Use sample hospitals as fallback
+                # Use sample hospitals for now
                 sample_hospitals = [
                     {
                         'name': 'City General Hospital',
@@ -941,63 +567,71 @@ def scrape_nearby_hospitals(lat, lon):
                         'fee_details': 'Consultation: $45, Emergency: $90'
                     }
                 ]
-
-                hospitals_list.controls.append(ft.Text(f"🏥 Sample hospitals (for demonstration):", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.ORANGE))
-
+                
+                hospitals_list.controls.clear()
+                hospitals_list.controls.append(ft.Text(f"🏥 Found {len(sample_hospitals)} nearby hospitals:", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN))
+                hospitals_list.controls.append(ft.Text(f"📍 Based on your location: {lat:.4f}, {lon:.4f}", size=12, color=ft.Colors.BLUE))
+                
                 for i, h in enumerate(sample_hospitals, 1):
-                     hospitals_list.controls.append(
-                         ft.Container(
-                             content=ft.Column([
-                                 ft.Row([
-                                     ft.Container(
-                                         content=ft.Text(f"#{i}", size=12, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
-                                         bgcolor=ft.Colors.ORANGE_600,
-                                         border_radius=ft.border_radius.all(8),
-                                         padding=ft.padding.symmetric(horizontal=8, vertical=2),
-                                         alignment=ft.alignment.center,
-                                     ),
-                                     ft.Container(width=10),
-                                     ft.Text(h['name'], size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.ORANGE_900, expand=True),
-                                     ft.Icon(ft.Icons.LOCAL_HOSPITAL, size=24, color=ft.Colors.ORANGE_600),
-                                 ], alignment=ft.MainAxisAlignment.START),
-                                 ft.Container(height=8),
-                                 ft.Row([
-                                     ft.Icon(ft.Icons.LOCATION_ON, size=16, color=ft.Colors.GREY_600),
-                                     ft.Text(h['address'], size=14, color=ft.Colors.GREY_700, expand=True),
-                                 ], spacing=5),
-                                 ft.Container(height=4),
-                                 ft.Row([
-                                     ft.Icon(ft.Icons.PHONE, size=16, color=ft.Colors.GREY_600),
-                                     ft.Text(h['phone'], size=14, color=ft.Colors.GREY_700),
-                                 ], spacing=5),
-                                 ft.Container(height=4),
-                                 ft.Row([
-                                     ft.Icon(ft.Icons.ATTACH_MONEY, size=16, color=ft.Colors.GREY_600),
-                                     ft.Text(h.get('fee_details', 'Contact for pricing'), size=14, color=ft.Colors.GREY_700),
-                                 ], spacing=5),
-                                 ft.Container(height=8),
-                                 ft.Container(
-                                     content=ft.Row([
-                                         ft.Icon(ft.Icons.DIRECTIONS, size=14, color=ft.Colors.ORANGE_600),
-                                         ft.Text(f"{h['distance_km']} km away", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.ORANGE_600),
-                                     ], spacing=4),
-                                     bgcolor=ft.Colors.ORANGE_50,
-                                     border_radius=ft.border_radius.all(6),
-                                     padding=ft.padding.symmetric(horizontal=8, vertical=4),
-                                 ),
-                             ], spacing=0),
-                             padding=ft.padding.all(16),
-                             bgcolor=ft.Colors.WHITE,
-                             border_radius=ft.border_radius.all(12),
-                             shadow=ft.BoxShadow(
-                                 spread_radius=1,
-                                 blur_radius=8,
-                                 color=ft.Colors.BLACK12,
-                                 offset=ft.Offset(0, 2),
-                             ),
-                             margin=ft.margin.symmetric(vertical=6),
-                         )
-                     )
+                    distance = h.get('distance_km', '?')
+                    phone = h.get('phone', 'N/A')
+                    hospitals_list.controls.append(
+                        ft.Container(
+                            content=ft.Column([
+                                ft.Row([
+                                    ft.Container(
+                                        content=ft.Text(f"#{i}", size=12, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+                                        bgcolor=ft.Colors.BLUE_600,
+                                        border_radius=ft.border_radius.all(8),
+                                        padding=ft.padding.symmetric(horizontal=8, vertical=2),
+                                        alignment=ft.alignment.center,
+                                    ),
+                                    ft.Container(width=10),
+                                    ft.Text(h['name'], size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900, expand=True),
+                                    ft.Icon(ft.Icons.LOCAL_HOSPITAL, size=24, color=ft.Colors.BLUE_600),
+                                ], alignment=ft.MainAxisAlignment.START),
+                                ft.Container(height=8),
+                                ft.Row([
+                                    ft.Icon(ft.Icons.LOCATION_ON, size=16, color=ft.Colors.GREY_600),
+                                    ft.Text(h['address'], size=14, color=ft.Colors.GREY_700, expand=True),
+                                ], spacing=5),
+                                ft.Container(height=4),
+                                ft.Row([
+                                    ft.Icon(ft.Icons.PHONE, size=16, color=ft.Colors.GREY_600),
+                                    ft.Text(phone, size=14, color=ft.Colors.GREY_700),
+                                ], spacing=5),
+                                ft.Container(height=4),
+                                ft.Row([
+                                    ft.Icon(ft.Icons.ATTACH_MONEY, size=16, color=ft.Colors.GREY_600),
+                                    ft.Text(h.get('fee_details', 'Contact for pricing'), size=14, color=ft.Colors.GREY_700),
+                                ], spacing=5),
+                                ft.Container(height=8),
+                                ft.Container(
+                                    content=ft.Row([
+                                        ft.Icon(ft.Icons.DIRECTIONS, size=14, color=ft.Colors.BLUE_600),
+                                        ft.Text(f"{distance} km away", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_600),
+                                    ], spacing=4),
+                                    bgcolor=ft.Colors.BLUE_50,
+                                    border_radius=ft.border_radius.all(6),
+                                    padding=ft.padding.symmetric(horizontal=8, vertical=4),
+                                ),
+                            ], spacing=0),
+                            padding=ft.padding.all(16),
+                            bgcolor=ft.Colors.WHITE,
+                            border_radius=ft.border_radius.all(12),
+                            shadow=ft.BoxShadow(
+                                spread_radius=1,
+                                blur_radius=8,
+                                color=ft.Colors.BLACK12,
+                                offset=ft.Offset(0, 2),
+                            ),
+                            margin=ft.margin.symmetric(vertical=6),
+                        )
+                    )
+            else:
+                hospitals_list.controls.clear()
+                hospitals_list.controls.append(ft.Text("❌ Could not get your location", color=ft.Colors.RED, size=16))
+                hospitals_list.controls.append(ft.Text("📍 Using sample hospitals instead...", color=ft.Colors.ORANGE))
                 
         except Exception as ex:
             print(f"Error in load_nearby: {ex}")
@@ -1015,7 +649,7 @@ def scrape_nearby_hospitals(lat, lon):
         else:
             load_nearby()
 
-def load_appointments():
+    def load_appointments():
         appt_list.controls.clear()
         
         if not token["value"] or not user_id["value"]:
@@ -1035,17 +669,14 @@ def load_appointments():
         
         try:
             headers = {"Authorization": f"Bearer {token['value']}"}
-            # Add today=true parameter to get only today's appointments
             r = requests.get(f"{API_BASE}/appointments/{user_id['value']}?today=true", headers=headers, timeout=10)
             
             if r.status_code == 200:
                 appointments = r.json().get("appointments", [])
-                # Filter out completed appointments
                 active_appointments = [a for a in appointments if a.get('status') != 'Completed']
                 
                 if active_appointments:
                     for a in active_appointments:
-                        # Status color mapping
                         status_color = {
                             'Scheduled': ft.Colors.BLUE_600,
                             'Confirmed': ft.Colors.GREEN_600,
@@ -1071,11 +702,6 @@ def load_appointments():
                                         ft.Icon(ft.Icons.LOCAL_HOSPITAL, size=16, color=ft.Colors.GREY_600),
                                         ft.Text(f"Hospital: {a.get('hospital_name', 'Not specified')}", size=14, color=ft.Colors.GREY_700),
                                     ], spacing=5),
-                                    ft.Container(height=4),
-                                    ft.Row([
-                                        ft.Icon(ft.Icons.MEDICAL_SERVICES, size=16, color=ft.Colors.GREY_600),
-                                        ft.Text(f"Type: {a.get('appointment_type', 'General')}", size=14, color=ft.Colors.GREY_700),
-                                    ], spacing=5),
                                 ], spacing=0),
                                 padding=ft.padding.all(16),
                                 bgcolor=ft.Colors.WHITE,
@@ -1090,7 +716,6 @@ def load_appointments():
                             )
                         )
                 else:
-                    # Empty state
                     appt_list.controls.append(
                         ft.Container(
                             content=ft.Column([
@@ -1168,7 +793,7 @@ def load_appointments():
             )
         page.update()
 
-def load_completed_appointments():
+    def load_completed_appointments():
         completed_appt_list.controls.clear()
         
         if not token["value"] or not user_id["value"]:
@@ -1188,7 +813,6 @@ def load_completed_appointments():
         
         try:
             headers = {"Authorization": f"Bearer {token['value']}"}
-            # Get all appointments and filter for completed ones
             r = requests.get(f"{API_BASE}/appointments/{user_id['value']}", headers=headers, timeout=10)
             
             if r.status_code == 200:
@@ -1215,11 +839,6 @@ def load_completed_appointments():
                                         ft.Icon(ft.Icons.LOCAL_HOSPITAL, size=16, color=ft.Colors.GREY_600),
                                         ft.Text(f"Hospital: {a.get('hospital_name', 'Not specified')}", size=14, color=ft.Colors.GREY_700),
                                     ], spacing=5),
-                                    ft.Container(height=4),
-                                    ft.Row([
-                                        ft.Icon(ft.Icons.MEDICAL_SERVICES, size=16, color=ft.Colors.GREY_600),
-                                        ft.Text(f"Type: {a.get('appointment_type', 'General')}", size=14, color=ft.Colors.GREY_700),
-                                    ], spacing=5),
                                 ], spacing=0),
                                 padding=ft.padding.all(16),
                                 bgcolor=ft.Colors.WHITE,
@@ -1234,7 +853,6 @@ def load_completed_appointments():
                             )
                         )
                 else:
-                    # Empty state
                     completed_appt_list.controls.append(
                         ft.Container(
                             content=ft.Column([
@@ -1312,7 +930,7 @@ def load_completed_appointments():
             )
         page.update()
 
-def do_signup(e):
+    def do_signup(e):
         try:
             # Validate passwords match
             if signup_password.value != signup_confirm_password.value:
